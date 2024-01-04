@@ -44,7 +44,7 @@ const ActivityScreen = ({ navigation, route }) => {
 
     const generateActivity = async () => {
         try {
-            let response = await axios.post('http://192.168.0.123:5000/generate', {
+            let response = await axios.post('http://127.0.0.1:5000/generate', {
                 prompt: prompt
             });
             
@@ -57,7 +57,7 @@ const ActivityScreen = ({ navigation, route }) => {
             setLoading(false);
             
             const fetchNextChunk = async () => {
-                let chunkResponse = await axios.get(`http://192.168.0.123:5000/next_chunk/${requestKey}`);
+                let chunkResponse = await axios.get(`http://127.0.0.1:5000/next_chunk/${requestKey}`);
                 
                 if (!chunkResponse.data.response) {
                     return;

@@ -4,9 +4,7 @@ from pydantic import BaseModel
 from openai import OpenAI
 import uvicorn
 import os
-
 app = FastAPI()
-client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
 
 # Allow CORS for all origins
 app.add_middleware(
@@ -22,15 +20,18 @@ chunks_store = {}
 class GenerateRequest(BaseModel):
     prompt: str
 
+client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
 @app.post("/generate")
 async def generate(data: GenerateRequest):
     prompt = data.prompt
     
     print(f"Received request for prompt: {prompt}")
     
-    response = client.completions.create(
-        model="gpt-4",
-        messages=[
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4-1106-preview",
+            messages=[
             {"role": "system", "content": 
             """
                 You will provide unique, creative, and exciting activities for people based on the parameters given by the user.
@@ -64,10 +65,18 @@ async def generate(data: GenerateRequest):
                 Insert a short note here
             """},
             {"role": "user", "content": prompt}
-        ]
-    )
+            ],
+            temperature=1,
+            max_tokens=1024,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0
+        )
+    except Exception as e:
+        print(f"Error processing the API response: {e}")
+        raise HTTPException(status_code=500, detail="Error processing the API response")
 
-    chunks = response.choices[0].message['content'].strip().split()
+    chunks = response.choices[0].message.content.strip().split()
     request_key = str(hash(prompt))
     chunks_store[request_key] = chunks
     first_chunk = chunks_store[request_key].pop(0) if chunks_store[request_key] else None  # Use None as a sentinel value
