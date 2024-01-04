@@ -186,21 +186,21 @@ const ActivityScreen = ({ navigation, route }) => {
                     </ScrollView>
                     <View style={styles.buttonContainer}>
                         <TouchableOpacity
-                            style={[styles.button, styles.regenerateButton]}
+                            style={[styles.button, styles.newActivityButton]}
                             onPress={() => {
                                 // Handle "Regenerate" button press
                             }}
                             >
-                            <Text style={[styles.buttonText, styles.regenerateButtonText]}>
-                                Regenerate
+                            <Text style={[styles.buttonText, styles.newActivityButtonText]}>
+                                New Activity
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.button, styles.startButton]}
+                            style={[styles.button, styles.regenerateButton]}
                             onPress={() => setIsExpanded(true)}
                         >
-                            <Text style={[styles.buttonText, styles.startButtonText]}>
-                            Start Activity
+                            <Text style={[styles.buttonText, styles.regenerateButtonText]}>
+                            Regenerate
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -272,10 +272,10 @@ const styles = StyleSheet.create({
       justifyContent: "center",
       alignItems: "center",
     },
-    startButton: {
+    regenerateButton: {
       backgroundColor: "#2b2b2b",
     },
-    regenerateButton: {
+    newActivityButton: {
       backgroundColor: "#FFF",
       borderWidth: 1,
       borderColor: "#000",
@@ -284,10 +284,10 @@ const styles = StyleSheet.create({
       fontSize: 18,
       fontWeight: "bold",
     },
-    startButtonText: {
+    regenerateButtonText: {
       color: "#FFF",
     },
-    regenerateButtonText: {
+    newActivityButtonText: {
       color: "#000",
     },
     separator: {
