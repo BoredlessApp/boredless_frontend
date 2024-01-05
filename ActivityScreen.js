@@ -18,7 +18,7 @@ const ActivityScreen = ({ navigation, route }) => {
     const [currentSection, setCurrentSection] = useState('activity');
     const prompt = route.params?.prompt;
     const [loading, setLoading] = useState(true);
-
+    
     const [materialsChecked, setMaterialsChecked] = useState(new Array(activityContent.materials.length).fill(false));
     const [instructionsChecked, setInstructionsChecked] = useState(new Array(activityContent.instructions.length).fill(false));
 
@@ -34,20 +34,12 @@ const ActivityScreen = ({ navigation, route }) => {
         setInstructionsChecked(updatedInstructionsChecked);
     };
 
-    const handleComplete = () => {
-        navigation.navigate('Home');
-    };
-
-    const handlePhoto = () => {
-        navigation.navigate('Home');
-    };
-
     const generateActivity = async () => {
         try {
             let response = await axios.post('http://127.0.0.1:5000/generate', {
                 prompt: prompt
             });
-            
+
             let section = 'activity';
             for (let word of response.data.response.split(' ')) {
                 section = appendContent(word, section);
@@ -188,7 +180,7 @@ const ActivityScreen = ({ navigation, route }) => {
                         <TouchableOpacity
                             style={[styles.button, styles.newActivityButton]}
                             onPress={() => {
-                                // Handle "Regenerate" button press
+                                // Handle "new activity" button press
                             }}
                             >
                             <Text style={[styles.buttonText, styles.newActivityButtonText]}>
@@ -197,10 +189,12 @@ const ActivityScreen = ({ navigation, route }) => {
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.button, styles.regenerateButton]}
-                            onPress={() => setIsExpanded(true)}
+                            onPress={() => {
+                                // Handle "regenerate" button press
+                            }}
                         >
                             <Text style={[styles.buttonText, styles.regenerateButtonText]}>
-                            Regenerate
+                                Regenerate
                             </Text>
                         </TouchableOpacity>
                     </View>
