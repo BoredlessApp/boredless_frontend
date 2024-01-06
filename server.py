@@ -34,6 +34,7 @@ def generate_request_key(prompt):
 
 @app.post("/generate")
 async def generate(data: GenerateRequest):
+    print(f"Generate endpoint received data: {data}")
     prompt = data.prompt
     
     print(f"Received request for prompt: {prompt}")
@@ -82,6 +83,7 @@ async def generate(data: GenerateRequest):
             frequency_penalty=0,
             presence_penalty=0
         )
+        print(f"OpenAI API response: {response}")
     except Exception as e:
         print(f"Error processing the API response: {e}")
         raise HTTPException(status_code=500, detail="Error processing the API response")
@@ -104,7 +106,7 @@ async def generate(data: GenerateRequest):
 
 @app.post("/regenerate")
 async def regenerate(data: RegenerateRequest):
-    print(f"Received data: {data}")
+    print(f"Regenerate endpoint received data: {data}")
     prompt = data.prompt
     print(f"Received regeneration request for prompt: {prompt}")
 
@@ -123,6 +125,7 @@ async def regenerate(data: RegenerateRequest):
             frequency_penalty=0,
             presence_penalty=0
         )
+        print(f"OpenAI API response: {response}")
     except Exception as e:
         print(f"Error processing the API response: {e}")
         raise HTTPException(status_code=500, detail="Error processing the API response")

@@ -37,11 +37,13 @@ const ActivityScreen = ({ navigation, route }) => {
     };
 
     const generateActivity = async () => {
+        console.log("generateActivity: Sending prompt:", prompt);
         try {
             let response = await axios.post('http://127.0.0.1:5000/generate', {
                 prompt: prompt
             });
-
+            console.log("Response received:", response.data);
+    
             let section = 'activity';
             for (let word of response.data.response.split(' ')) {
                 section = appendContent(word, section);
@@ -68,12 +70,24 @@ const ActivityScreen = ({ navigation, route }) => {
             fetchNextChunk();
     
         } catch (error) {
-            console.error("Error in generateActivity:", error);
+            console.error("Error in generateActivity:", error.message);
+            if (error.response) {
+                console.error(error.response.data);
+                console.error(error.response.status);
+                console.error(error.response.headers);
+            } else if (error.request) {
+                console.error(error.request);
+            } else {
+                console.error('Error', error.message);
+            }
+            setLoading(false);
         }
     };
-
+    
     const regenerateActivity = async () => {
+        console.log("regenerateActivity: Sending initialPrompt:", initialPrompt);
         try {
+            setLoading(true); // Enable loading screen
             setActivityContent({
                 activity: '',
                 introduction: '',
@@ -81,13 +95,12 @@ const ActivityScreen = ({ navigation, route }) => {
                 instructions: ''
             });
             setCurrentSection('activity');
-            setLoading(true);
-    
+            
             let response = await axios.post('http://127.0.0.1:5000/regenerate', {
                 prompt: initialPrompt
             });
+            console.log("Response received:", response.data);
     
-            // Process the initial chunk of the response
             let section = 'activity';
             for (let word of response.data.response.split(' ')) {
                 section = appendContent(word, section);
@@ -100,7 +113,7 @@ const ActivityScreen = ({ navigation, route }) => {
                 let chunkResponse = await axios.get(`http://127.0.0.1:5000/next_chunk/${requestKey}`);
     
                 if (!chunkResponse.data.response) {
-                    setLoading(false);
+                    setLoading(false); // Disable loading screen when done
                     return;
                 }
     
@@ -116,11 +129,20 @@ const ActivityScreen = ({ navigation, route }) => {
             fetchNextChunk();
     
         } catch (error) {
-            console.error("Error in regenerateActivity:", error);
-            setLoading(false);
+            console.error("Error in regenerateActivity:", error.message);
+            if (error.response) {
+                console.error(error.response.data);
+                console.error(error.response.status);
+                console.error(error.response.headers);
+            } else if (error.request) {
+                console.error(error.request);
+            } else {
+                console.error('Error', error.message);
+            }
+            setLoading(false); // Disable loading screen on error
         }
     };
-
+    
     const appendContent = (word, currentSection) => {
         console.log(`Processing word: ${word.trim()}, Current section: ${currentSection}`);
         
@@ -164,6 +186,7 @@ const ActivityScreen = ({ navigation, route }) => {
 
     useFocusEffect(
         React.useCallback(() => {
+            console.log("Focus Effect: prompt =", prompt);
             setLoading(true);
             setActivityContent({
                 activity: '',
@@ -173,6 +196,8 @@ const ActivityScreen = ({ navigation, route }) => {
             });
             setCurrentSection('activity');
             if (prompt) {
+                setInitialPrompt(prompt); // Setting initial prompt
+                console.log("Setting initialPrompt:", prompt);
                 generateActivity();
             }
         }, [prompt])
