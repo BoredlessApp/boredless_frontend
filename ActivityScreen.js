@@ -35,7 +35,7 @@ const ActivityScreen = ({ navigation, route }) => {
         updatedInstructionsChecked[index] = newValue;
         setInstructionsChecked(updatedInstructionsChecked);
     };
-
+    
     const generateActivity = async () => {
         console.log("generateActivity: Sending prompt:", prompt);
         try {
@@ -47,7 +47,7 @@ const ActivityScreen = ({ navigation, route }) => {
             let section = 'activity';
             for (let word of response.data.response.split(' ')) {
                 section = appendContent(word, section);
-            }
+}
     
             const requestKey = response.data.request_key;
             setLoading(false);
@@ -62,7 +62,7 @@ const ActivityScreen = ({ navigation, route }) => {
                 for (let word of chunkResponse.data.response.split(' ')) {
                     section = appendContent(word, section);
                 }
-    
+                
                 // Set a delay for the next chunk to be fetched
                 setTimeout(fetchNextChunk, 50); 
             }
@@ -95,7 +95,7 @@ const ActivityScreen = ({ navigation, route }) => {
                 instructions: ''
             });
             setCurrentSection('activity');
-            
+    
             let response = await axios.post('http://127.0.0.1:5000/regenerate', {
                 prompt: initialPrompt
             });
@@ -107,13 +107,13 @@ const ActivityScreen = ({ navigation, route }) => {
             }
     
             const requestKey = response.data.request_key;
+            setLoading(false); // Disable loading screen once the first chunk is processed
     
             // Function to fetch the next chunk of data
             const fetchNextChunk = async () => {
                 let chunkResponse = await axios.get(`http://127.0.0.1:5000/next_chunk/${requestKey}`);
     
                 if (!chunkResponse.data.response) {
-                    setLoading(false); // Disable loading screen when done
                     return;
                 }
     
@@ -142,6 +142,7 @@ const ActivityScreen = ({ navigation, route }) => {
             setLoading(false); // Disable loading screen on error
         }
     };
+    
     
     const appendContent = (word, currentSection) => {
         console.log(`Processing word: ${word.trim()}, Current section: ${currentSection}`);
