@@ -1,0 +1,4 @@
+npx expo start --ios
+source ../python-venv/bin/activate 
+export OPENAI_API_KEY=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
+uvicorn server:app --port 5000 --reload

@@ -16,8 +16,10 @@ const ActivityScreen = ({ navigation, route }) => {
         instructions: ''
     });
     const [currentSection, setCurrentSection] = useState('activity');
+    const [initialPrompt, setInitialPrompt] = useState(null);
     const prompt = route.params?.prompt;
     const [loading, setLoading] = useState(true);
+
     
     const [materialsChecked, setMaterialsChecked] = useState(new Array(activityContent.materials.length).fill(false));
     const [instructionsChecked, setInstructionsChecked] = useState(new Array(activityContent.instructions.length).fill(false));
@@ -67,6 +69,55 @@ const ActivityScreen = ({ navigation, route }) => {
     
         } catch (error) {
             console.error("Error in generateActivity:", error);
+        }
+    };
+
+    const regenerateActivity = async () => {
+        try {
+            setActivityContent({
+                activity: '',
+                introduction: '',
+                materials: '',
+                instructions: ''
+            });
+            setCurrentSection('activity');
+            setLoading(true);
+    
+            let response = await axios.post('http://127.0.0.1:5000/regenerate', {
+                prompt: initialPrompt
+            });
+    
+            // Process the initial chunk of the response
+            let section = 'activity';
+            for (let word of response.data.response.split(' ')) {
+                section = appendContent(word, section);
+            }
+    
+            const requestKey = response.data.request_key;
+    
+            // Function to fetch the next chunk of data
+            const fetchNextChunk = async () => {
+                let chunkResponse = await axios.get(`http://127.0.0.1:5000/next_chunk/${requestKey}`);
+    
+                if (!chunkResponse.data.response) {
+                    setLoading(false);
+                    return;
+                }
+    
+                for (let word of chunkResponse.data.response.split(' ')) {
+                    section = appendContent(word, section);
+                }
+    
+                // Set a delay for the next chunk to be fetched
+                setTimeout(fetchNextChunk, 50); 
+            }
+    
+            // Start fetching subsequent chunks
+            fetchNextChunk();
+    
+        } catch (error) {
+            console.error("Error in regenerateActivity:", error);
+            setLoading(false);
         }
     };
 
@@ -190,7 +241,7 @@ const ActivityScreen = ({ navigation, route }) => {
                         <TouchableOpacity
                             style={[styles.button, styles.regenerateButton]}
                             onPress={() => {
-                                // Handle "regenerate" button press
+                                regenerateActivity();
                             }}
                         >
                             <Text style={[styles.buttonText, styles.regenerateButtonText]}>

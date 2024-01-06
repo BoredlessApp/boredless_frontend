@@ -4,7 +4,11 @@ from pydantic import BaseModel
 from openai import OpenAI
 import uvicorn
 import os
+import uuid
+import asyncio
+
 app = FastAPI()
+chunks_lock = asyncio.Lock()
 
 # Allow CORS for all origins
 app.add_middleware(
@@ -20,7 +24,13 @@ chunks_store = {}
 class GenerateRequest(BaseModel):
     prompt: str
 
+class RegenerateRequest(BaseModel):
+    prompt: str
+
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
+def generate_request_key(prompt):
+    return f"{uuid.uuid4()}_{hash(prompt)}"
 
 @app.post("/generate")
 async def generate(data: GenerateRequest):
@@ -77,7 +87,8 @@ async def generate(data: GenerateRequest):
         raise HTTPException(status_code=500, detail="Error processing the API response")
 
     chunks = response.choices[0].message.content.strip().split()
-    request_key = str(hash(prompt))
+    request_key = generate_request_key(prompt)
+    # async with chunks_lock:  # Lock is acquired here
     chunks_store[request_key] = chunks
     first_chunk = chunks_store[request_key].pop(0) if chunks_store[request_key] else None  # Use None as a sentinel value
     
@@ -91,6 +102,47 @@ async def generate(data: GenerateRequest):
         'request_key': request_key
     }
 
+@app.post("/regenerate")
+async def regenerate(data: RegenerateRequest):
+    print(f"Received data: {data}")
+    prompt = data.prompt
+    print(f"Received regeneration request for prompt: {prompt}")
+
+    # Logic for regeneration using only the assistant role
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4-1106-preview",
+            messages=[
+                {
+                    "role": "assistant", "content": prompt
+                }
+            ],
+            temperature=1,
+            max_tokens=1024,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0
+        )
+    except Exception as e:
+        print(f"Error processing the API response: {e}")
+        raise HTTPException(status_code=500, detail="Error processing the API response")
+
+    chunks = response.choices[0].message.content.strip().split()
+    request_key = generate_request_key(prompt)
+    # async with chunks_lock:  # Lock is acquired here
+    chunks_store[request_key] = chunks
+    first_chunk = chunks_store[request_key].pop(0) if chunks_store[request_key] else None  # Use None as a sentinel value
+    
+    if first_chunk is None:
+        return {'response': '', 'message': 'No more chunks'}
+    
+    print(f"Returning first chunk: {first_chunk} for request key: {request_key}")
+    
+    return {
+        'response': first_chunk,
+        'request_key': request_key
+    }
+    
 @app.get("/next_chunk/{request_key}")
 async def next_chunk(request_key: str):
     print(f"Request for next chunk with key: {request_key}")
