@@ -41,7 +41,7 @@ async def generate(data: GenerateRequest):
     
     try:
         response = client.chat.completions.create(
-            model="gpt-4-1106-preview",
+            model="gpt-3.5-turbo",
             messages=[
             {"role": "system", "content": 
             """
