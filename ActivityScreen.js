@@ -36,10 +36,17 @@ const ActivityScreen = ({ navigation, route }) => {
         updatedInstructionsChecked[index] = newValue;
         setInstructionsChecked(updatedInstructionsChecked);
     };
+
+    const updateCheckboxes = (materials, instructions) => {
+        setMaterialsChecked(new Array(materials.length).fill(false));
+        setInstructionsChecked(new Array(instructions.length).fill(false));
+    };
     
     const generateActivity = async () => {
         console.log("generateActivity: Sending prompt:", prompt);
         setIsGenerating(true); // Start of generation
+        // Call updateCheckboxes here after all chunks are processed
+        updateCheckboxes(activityContent.materials.split('\n'), activityContent.instructions.split('\n'));
         try {
             let response = await axios.post('http://127.0.0.1:5000/generate', {
                 prompt: prompt
@@ -90,6 +97,8 @@ const ActivityScreen = ({ navigation, route }) => {
     const regenerateActivity = async () => {
         console.log("regenerateActivity: Sending initialPrompt:", initialPrompt);
         setIsGenerating(true);
+        // Call updateCheckboxes here after all chunks are processed
+        updateCheckboxes(activityContent.materials.split('\n'), activityContent.instructions.split('\n'));
         try {
             setLoading(true); // Enable loading screen
             setActivityContent({
