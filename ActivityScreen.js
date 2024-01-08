@@ -16,6 +16,7 @@ const ActivityScreen = ({ navigation, route }) => {
         instructions: ''
     });
     const [currentSection, setCurrentSection] = useState('activity');
+    const [isGenerating, setIsGenerating] = useState(false);
     const [initialPrompt, setInitialPrompt] = useState(null);
     const prompt = route.params?.prompt;
     const [loading, setLoading] = useState(true);
@@ -38,35 +39,36 @@ const ActivityScreen = ({ navigation, route }) => {
     
     const generateActivity = async () => {
         console.log("generateActivity: Sending prompt:", prompt);
+        setIsGenerating(true); // Start of generation
         try {
             let response = await axios.post('http://127.0.0.1:5000/generate', {
                 prompt: prompt
             });
             console.log("Response received:", response.data);
-    
+
             let section = 'activity';
             for (let word of response.data.response.split(' ')) {
                 section = appendContent(word, section);
-}
-    
+            }
+
             const requestKey = response.data.request_key;
             setLoading(false);
-            
+
             const fetchNextChunk = async () => {
                 let chunkResponse = await axios.get(`http://127.0.0.1:5000/next_chunk/${requestKey}`);
-                
+
                 if (!chunkResponse.data.response) {
+                    setIsGenerating(false); // End of generation
                     return;
                 }
-    
+
                 for (let word of chunkResponse.data.response.split(' ')) {
                     section = appendContent(word, section);
                 }
-                
-                // Set a delay for the next chunk to be fetched
+
                 setTimeout(fetchNextChunk, 50); 
-            }
-    
+            };
+
             fetchNextChunk();
     
         } catch (error) {
@@ -81,11 +83,13 @@ const ActivityScreen = ({ navigation, route }) => {
                 console.error('Error', error.message);
             }
             setLoading(false);
+            setIsGenerating(false);
         }
     };
     
     const regenerateActivity = async () => {
         console.log("regenerateActivity: Sending initialPrompt:", initialPrompt);
+        setIsGenerating(true);
         try {
             setLoading(true); // Enable loading screen
             setActivityContent({
@@ -114,6 +118,7 @@ const ActivityScreen = ({ navigation, route }) => {
                 let chunkResponse = await axios.get(`http://127.0.0.1:5000/next_chunk/${requestKey}`);
     
                 if (!chunkResponse.data.response) {
+                    setIsGenerating(false); // End of generation
                     return;
                 }
     
@@ -140,6 +145,7 @@ const ActivityScreen = ({ navigation, route }) => {
                 console.error('Error', error.message);
             }
             setLoading(false); // Disable loading screen on error
+            setIsGenerating(false);
         }
     };
     
@@ -254,24 +260,23 @@ const ActivityScreen = ({ navigation, route }) => {
                         ))}
                     </ScrollView>
                     <View style={styles.buttonContainer}>
+                    <TouchableOpacity
+                            style={[styles.button, styles.refreshButton]}
+                            onPress={regenerateActivity}
+                            disabled={isGenerating}
+                        >
+                            <Text style={[styles.buttonText, styles.refreshButtonText]}>
+                                Refresh
+                            </Text>
+                        </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.button, styles.newActivityButton]}
+                            style={[styles.button, styles.startActivityButton]}
                             onPress={() => {
                                 // Handle "new activity" button press
                             }}
                             >
-                            <Text style={[styles.buttonText, styles.newActivityButtonText]}>
-                                New Activity
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.button, styles.regenerateButton]}
-                            onPress={() => {
-                                regenerateActivity();
-                            }}
-                        >
-                            <Text style={[styles.buttonText, styles.regenerateButtonText]}>
-                                Regenerate
+                            <Text style={[styles.buttonText, styles.startActivityButtonText]}>
+                                Start Activity
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -343,23 +348,23 @@ const styles = StyleSheet.create({
       justifyContent: "center",
       alignItems: "center",
     },
-    regenerateButton: {
-      backgroundColor: "#2b2b2b",
-    },
-    newActivityButton: {
+    refreshButton: {
       backgroundColor: "#FFF",
       borderWidth: 1,
+    },
+    startActivityButton: {
+      backgroundColor: "#2b2b2b",
       borderColor: "#000",
     },
     buttonText: {
       fontSize: 18,
       fontWeight: "bold",
     },
-    regenerateButtonText: {
-      color: "#FFF",
-    },
-    newActivityButtonText: {
+    refreshButtonText: {
       color: "#000",
+    },
+    startActivityButtonText: {
+      color: "#FFF",
     },
     separator: {
       height: 1.3,

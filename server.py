@@ -113,11 +113,41 @@ async def regenerate(data: RegenerateRequest):
     # Logic for regeneration using only the assistant role
     try:
         response = client.chat.completions.create(
-            model="gpt-4-1106-preview",
+            model="gpt-3.5-turbo",
             messages=[
-                {
-                    "role": "assistant", "content": prompt
-                }
+                {"role": "system", "content": 
+            """
+                You will provide unique, creative, and exciting activities for people based on the parameters given by the user.
+                (Every activity generated should adhere to the format below exactly)
+
+                FORMAT:
+
+                Activity:
+                Title of the activity goes here
+
+                Introduction:
+                Insert a detailed introduction here
+
+                Materials:
+                (Maximum 5 short materials)
+                - Material 1
+                - Material 2
+                - Material 3
+                - Material 4
+                - Material 5
+                
+                Instructions:
+                (Maximum 5 instructions 1 sentence each)
+                1. Instruction 1
+                2. Instruction 2
+                3. Instruction 3
+                4. Instruction 4
+                5. Instruction 5
+
+                Note:
+                Insert a short note here
+            """},
+                {"role": "user", "content": prompt}
             ],
             temperature=1,
             max_tokens=1024,
