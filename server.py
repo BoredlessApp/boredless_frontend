@@ -6,6 +6,7 @@ import uvicorn
 import os
 import uuid
 import asyncio
+from difflib import SequenceMatcher
 
 app = FastAPI()
 chunks_lock = asyncio.Lock()
@@ -20,6 +21,7 @@ app.add_middleware(
 )
 
 chunks_store = {}
+previous_responses = {}  # Dictionary to store previous responses for each prompt
 
 class GenerateRequest(BaseModel):
     prompt: str
@@ -32,121 +34,51 @@ client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 def generate_request_key(prompt):
     return f"{uuid.uuid4()}_{hash(prompt)}"
 
-@app.post("/generate")
-async def generate(data: GenerateRequest):
-    print(f"Generate endpoint received data: {data}")
-    prompt = data.prompt
-    
-    print(f"Received request for prompt: {prompt}")
-    
-    try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-            {"role": "system", "content": 
-            """
-                You will provide unique, creative, and exciting activities for people based on the parameters given by the user.
-                (Every activity generated should adhere to the format below exactly)
+# Function to check similarity between two texts
+def is_similar(text1, text2, threshold=0.8):
+    return SequenceMatcher(None, text1, text2).ratio() > threshold
 
-                FORMAT:
+async def generate_activity(prompt, regenerate=False):
+    max_attempts = 5
+    attempt = 0
 
-                Activity:
-                Title of the activity goes here
-
-                Introduction:
-                Insert a detailed introduction here
-
-                Materials:
-                (Maximum 5 short materials)
-                - Material 1
-                - Material 2
-                - Material 3
-                - Material 4
-                - Material 5
-                
-                Instructions:
-                (Maximum 5 instructions 1 sentence each)
-                1. Instruction 1
-                2. Instruction 2
-                3. Instruction 3
-                4. Instruction 4
-                5. Instruction 5
-
-                Note:
-                Insert a short note here
-            """},
-            {"role": "user", "content": prompt}
-            ],
-            temperature=1,
-            max_tokens=1024,
-            top_p=1,
-            frequency_penalty=0,
-            presence_penalty=0
-        )
-        print(f"OpenAI API response: {response}")
-    except Exception as e:
-        print(f"Error processing the API response: {e}")
-        raise HTTPException(status_code=500, detail="Error processing the API response")
-
-    chunks = response.choices[0].message.content.strip().split()
-    request_key = generate_request_key(prompt)
-    # async with chunks_lock:  # Lock is acquired here
-    chunks_store[request_key] = chunks
-    first_chunk = chunks_store[request_key].pop(0) if chunks_store[request_key] else None  # Use None as a sentinel value
-    
-    if first_chunk is None:
-        return {'response': '', 'message': 'No more chunks'}
-    
-    print(f"Returning first chunk: {first_chunk} for request key: {request_key}")
-    
-    return {
-        'response': first_chunk,
-        'request_key': request_key
-    }
-
-@app.post("/regenerate")
-async def regenerate(data: RegenerateRequest):
-    print(f"Regenerate endpoint received data: {data}")
-    prompt = data.prompt
-    print(f"Received regeneration request for prompt: {prompt}")
-
-    # Logic for regeneration using only the assistant role
-    try:
+    while attempt < max_attempts:
+        attempt += 1
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": 
-            """
-                You will provide unique, creative, and exciting activities for people based on the parameters given by the user.
-                (Every activity generated should adhere to the format below exactly)
+                """
+                    You will provide unique, creative, and exciting activities for people based on the parameters given by the user.
+                    (Every activity generated should adhere to the format below exactly)
 
-                FORMAT:
+                    FORMAT:
 
-                Activity:
-                Title of the activity goes here
+                    Activity:
+                    Title of the activity goes here
 
-                Introduction:
-                Insert a detailed introduction here
+                    Introduction:
+                    Insert a detailed introduction here
 
-                Materials:
-                (Maximum 5 short materials)
-                - Material 1
-                - Material 2
-                - Material 3
-                - Material 4
-                - Material 5
-                
-                Instructions:
-                (Maximum 5 instructions 1 sentence each)
-                1. Instruction 1
-                2. Instruction 2
-                3. Instruction 3
-                4. Instruction 4
-                5. Instruction 5
+                    Materials:
+                    (Maximum 5 short materials)
+                    - Material 1
+                    - Material 2
+                    - Material 3
+                    - Material 4
+                    - Material 5
+                    
+                    Instructions:
+                    (Maximum 5 instructions 1 sentence each)
+                    1. Instruction 1
+                    2. Instruction 2
+                    3. Instruction 3
+                    4. Instruction 4
+                    5. Instruction 5
 
-                Note:
-                Insert a short note here
-            """},
+                    Note:
+                    Insert a short note here
+                """},
                 {"role": "user", "content": prompt}
             ],
             temperature=1,
@@ -155,21 +87,49 @@ async def regenerate(data: RegenerateRequest):
             frequency_penalty=0,
             presence_penalty=0
         )
-        print(f"OpenAI API response: {response}")
-    except Exception as e:
-        print(f"Error processing the API response: {e}")
-        raise HTTPException(status_code=500, detail="Error processing the API response")
+        generated_text = response.choices[0].message.content.strip()
 
-    chunks = response.choices[0].message.content.strip().split()
+        if regenerate and any(is_similar(generated_text, past_response) for past_response in previous_responses.get(prompt, [])):
+            print("Generated text is too similar to previous responses, regenerating...")
+            continue
+
+        if prompt not in previous_responses:
+            previous_responses[prompt] = []
+        previous_responses[prompt].append(generated_text)
+        return generated_text
+
+    raise HTTPException(status_code=500, detail="Unable to generate a unique activity")
+
+@app.post("/generate")
+async def generate(data: GenerateRequest):
+    prompt = data.prompt
+    generated_text = await generate_activity(prompt)
+
+    chunks = generated_text.split()
     request_key = generate_request_key(prompt)
-    # async with chunks_lock:  # Lock is acquired here
     chunks_store[request_key] = chunks
-    first_chunk = chunks_store[request_key].pop(0) if chunks_store[request_key] else None  # Use None as a sentinel value
+    first_chunk = chunks_store[request_key].pop(0) if chunks_store[request_key] else None
     
     if first_chunk is None:
         return {'response': '', 'message': 'No more chunks'}
     
-    print(f"Returning first chunk: {first_chunk} for request key: {request_key}")
+    return {
+        'response': first_chunk,
+        'request_key': request_key
+    }
+
+@app.post("/regenerate")
+async def regenerate(data: RegenerateRequest):
+    prompt = data.prompt
+    generated_text = await generate_activity(prompt, regenerate=True)
+
+    chunks = generated_text.split()
+    request_key = generate_request_key(prompt)
+    chunks_store[request_key] = chunks
+    first_chunk = chunks_store[request_key].pop(0) if chunks_store[request_key] else None
+    
+    if first_chunk is None:
+        return {'response': '', 'message': 'No more chunks'}
     
     return {
         'response': first_chunk,
@@ -178,11 +138,11 @@ async def regenerate(data: RegenerateRequest):
     
 @app.get("/next_chunk/{request_key}")
 async def next_chunk(request_key: str):
-    print(f"Request for next chunk with key: {request_key}")
-
     if request_key not in chunks_store or not chunks_store[request_key]:
-        return {'response': '', 'message': 'No more chunks'}  # Return a specific message to indicate end
+        return {'response': '', 'message': 'No more chunks'}
 
     next_chunk = chunks_store[request_key].pop(0)
-    print(f"Returning chunk: {next_chunk} for request key: {request_key}")
     return {'response': next_chunk}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=5000)

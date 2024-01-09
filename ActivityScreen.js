@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity, Dimensions, SafeAreaView, Switch, Animated } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity, Dimensions, SafeAreaView } from 'react-native';
 import axios from 'axios';
 import { useFocusEffect } from '@react-navigation/native';
 import { SquareCheckbox, CircleCheckbox } from "./Checkbox";
@@ -42,120 +42,57 @@ const ActivityScreen = ({ navigation, route }) => {
         setInstructionsChecked(new Array(instructions.length).fill(false));
     };
     
-    const generateActivity = async () => {
-        console.log("generateActivity: Sending prompt:", prompt);
-        setIsGenerating(true); // Start of generation
-        // Call updateCheckboxes here after all chunks are processed
-        updateCheckboxes(activityContent.materials.split('\n'), activityContent.instructions.split('\n'));
+    const processActivity = async (apiEndpoint, apiPayload) => {
+        console.log(`processActivity: Sending request with payload:`, apiPayload);
+        setIsGenerating(true);
         try {
-            let response = await axios.post('http://127.0.0.1:5000/generate', {
-                prompt: prompt
-            });
+            let response = await axios.post(`http://127.0.0.1:5000/${apiEndpoint}`, apiPayload);
             console.log("Response received:", response.data);
-
+    
             let section = 'activity';
-            for (let word of response.data.response.split(' ')) {
+            response.data.response.split(' ').forEach(word => {
                 section = appendContent(word, section);
-            }
-
+            });
+    
             const requestKey = response.data.request_key;
             setLoading(false);
-
+    
             const fetchNextChunk = async () => {
                 let chunkResponse = await axios.get(`http://127.0.0.1:5000/next_chunk/${requestKey}`);
-
                 if (!chunkResponse.data.response) {
-                    setIsGenerating(false); // End of generation
+                    setIsGenerating(false);
                     return;
                 }
-
-                for (let word of chunkResponse.data.response.split(' ')) {
+                chunkResponse.data.response.split(' ').forEach(word => {
                     section = appendContent(word, section);
-                }
-
-                setTimeout(fetchNextChunk, 50); 
+                });
+                setTimeout(fetchNextChunk, 50);
             };
-
-            fetchNextChunk();
     
+            fetchNextChunk();
         } catch (error) {
-            console.error("Error in generateActivity:", error.message);
-            if (error.response) {
-                console.error(error.response.data);
-                console.error(error.response.status);
-                console.error(error.response.headers);
-            } else if (error.request) {
-                console.error(error.request);
-            } else {
-                console.error('Error', error.message);
-            }
+            console.error("Error in processActivity:", error.message);
             setLoading(false);
             setIsGenerating(false);
         }
     };
     
-    const regenerateActivity = async () => {
-        console.log("regenerateActivity: Sending initialPrompt:", initialPrompt);
-        setIsGenerating(true);
-        // Call updateCheckboxes here after all chunks are processed
+    const generateActivity = async () => {
         updateCheckboxes(activityContent.materials.split('\n'), activityContent.instructions.split('\n'));
-        try {
-            setLoading(true); // Enable loading screen
-            setActivityContent({
-                activity: '',
-                introduction: '',
-                materials: '',
-                instructions: ''
-            });
-            setCurrentSection('activity');
+        processActivity('generate', { prompt });
+    };
     
-            let response = await axios.post('http://127.0.0.1:5000/regenerate', {
-                prompt: initialPrompt
-            });
-            console.log("Response received:", response.data);
-    
-            let section = 'activity';
-            for (let word of response.data.response.split(' ')) {
-                section = appendContent(word, section);
-            }
-    
-            const requestKey = response.data.request_key;
-            setLoading(false); // Disable loading screen once the first chunk is processed
-    
-            // Function to fetch the next chunk of data
-            const fetchNextChunk = async () => {
-                let chunkResponse = await axios.get(`http://127.0.0.1:5000/next_chunk/${requestKey}`);
-    
-                if (!chunkResponse.data.response) {
-                    setIsGenerating(false); // End of generation
-                    return;
-                }
-    
-                for (let word of chunkResponse.data.response.split(' ')) {
-                    section = appendContent(word, section);
-                }
-    
-                // Set a delay for the next chunk to be fetched
-                setTimeout(fetchNextChunk, 50); 
-            }
-    
-            // Start fetching subsequent chunks
-            fetchNextChunk();
-    
-        } catch (error) {
-            console.error("Error in regenerateActivity:", error.message);
-            if (error.response) {
-                console.error(error.response.data);
-                console.error(error.response.status);
-                console.error(error.response.headers);
-            } else if (error.request) {
-                console.error(error.request);
-            } else {
-                console.error('Error', error.message);
-            }
-            setLoading(false); // Disable loading screen on error
-            setIsGenerating(false);
-        }
+    const refreshActivity = async () => {
+        setLoading(true);
+        updateCheckboxes(activityContent.materials.split('\n'), activityContent.instructions.split('\n'));
+        setActivityContent({
+            activity: '',
+            introduction: '',
+            materials: '',
+            instructions: ''
+        });
+        setCurrentSection('activity');
+        processActivity('regenerate', { prompt: initialPrompt });
     };
     
     
@@ -271,7 +208,7 @@ const ActivityScreen = ({ navigation, route }) => {
                     <View style={styles.buttonContainer}>
                     <TouchableOpacity
                             style={[styles.button, styles.refreshButton]}
-                            onPress={regenerateActivity}
+                            onPress={refreshActivity}
                             disabled={isGenerating}
                         >
                             <Text style={[styles.buttonText, styles.refreshButtonText]}>
