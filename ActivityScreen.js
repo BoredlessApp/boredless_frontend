@@ -42,7 +42,26 @@ const ActivityScreen = ({ navigation, route }) => {
         setMaterialsChecked(new Array(materials.length).fill(false));
         setInstructionsChecked(new Array(instructions.length).fill(false));
     };
+
+    const fetchNextChunk = async (requestKey, currentSection) => {
     
+        let chunkResponse = await axios.get(`http://127.0.0.1:5000/next_chunk/${requestKey}`);
+        if (!chunkResponse.data.response) {
+            console.log("fetchNextChunk: No more data to fetch");
+            setIsGenerating(false);
+            return;
+        }
+        
+        chunkResponse.data.response.split(' ').forEach(word => {
+            console.log("fetchNextChunk: Processing word:", word, "Current section:", currentSection);
+            console.log("fetchNextChunk: Current section:", currentSection);
+            currentSection = appendContent(word, currentSection);
+        });
+    
+        // Automatically fetch the next chunk after a delay
+        setTimeout(() => fetchNextChunk(requestKey, currentSection), 50);
+    };
+        
     const processActivity = async (apiEndpoint, apiPayload) => {
         console.log(`processActivity: Sending request with payload:`, apiPayload);
         setIsGenerating(true);
@@ -50,6 +69,7 @@ const ActivityScreen = ({ navigation, route }) => {
         let shouldContinue = true; // Local variable to control the fetching loop
     
         const fetchNextChunk = async () => {
+            console.log("fetchNextChunk: 2");
             if (!shouldContinue) {
                 setIsGenerating(false);
                 return;
@@ -64,6 +84,7 @@ const ActivityScreen = ({ navigation, route }) => {
             chunkResponse.data.response.split(' ').forEach(word => {
                 section = appendContent(word, section);
                 if (word.trim().toLowerCase() === "materials:") {
+                    setCurrentSection('materials');
                     shouldContinue = false; // Update the local variable to stop further fetching
                 }
             });
@@ -86,8 +107,10 @@ const ActivityScreen = ({ navigation, route }) => {
                 shouldContinue = false; // Stop the initial fetching process
             }
         });
-    
+
         const requestKey = response.data.request_key;
+        console.log("fetchNextChunk called with requestKey1:", requestKey);
+        setRequestKey(requestKey);
         setLoading(false);
     
         if (shouldContinue) {
@@ -96,10 +119,7 @@ const ActivityScreen = ({ navigation, route }) => {
             setIsGenerating(false);
         }
     };
-    
-    
-    
-    
+
     const generateActivity = async () => {
         updateCheckboxes(activityContent.materials.split('\n'), activityContent.instructions.split('\n'));
         processActivity('generate', { prompt });
@@ -123,13 +143,6 @@ const ActivityScreen = ({ navigation, route }) => {
         
         word = word.trim();
     
-        // Check for the word "materials:" and stop fetching if encountered
-        if (word.toLowerCase() === "materials:") {
-            console.log("Materials section reached, stopping further fetching");
-            setShouldContinueFetching(false);  // Set the flag to false
-            return 'materials';
-        }
-    
         if (word.toLowerCase() === "note:") {
             // Stop appending content once we detect "Note:"
             return 'end';
@@ -139,6 +152,12 @@ const ActivityScreen = ({ navigation, route }) => {
         } else if (word.toLowerCase() === "introduction:") {
             console.log("Switched to 'introduction' section");
             return 'introduction';
+        } else if (word.toLowerCase() === "materials:") {
+            console.log("Switched to 'materials' section");
+            return 'materials';
+        } else if (word.toLowerCase() === "instructions:") {
+            console.log("Switched to 'instructions' section");
+            return 'instructions';
         } else if (currentSection !== 'end') {
             setActivityContent(prevContent => {
                 let updatedSection;
@@ -159,7 +178,12 @@ const ActivityScreen = ({ navigation, route }) => {
         return currentSection;
     };
     
-    
+    const handleStartActivity = () => {
+        console.log("Starting activity...");
+        setShouldContinueFetching(false);
+        setIsGenerating(true);
+        fetchNextChunk(requestKey, currentSection);
+    }
 
     useFocusEffect(
         React.useCallback(() => {
@@ -241,9 +265,7 @@ const ActivityScreen = ({ navigation, route }) => {
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.button, styles.startActivityButton]}
-                            onPress={() => {
-                                // Handle "new activity" button press
-                            }}
+                            onPress={handleStartActivity}
                             >
                             <Text style={[styles.buttonText, styles.startActivityButtonText]}>
                                 Start Activity
