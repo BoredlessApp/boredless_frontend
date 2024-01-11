@@ -20,8 +20,9 @@ const ActivityScreen = ({ navigation, route }) => {
     const [initialPrompt, setInitialPrompt] = useState(null);
     const prompt = route.params?.prompt;
     const [loading, setLoading] = useState(true);
+    const [shouldContinueFetching, setShouldContinueFetching] = useState(true);
+    const [requestKey, setRequestKey] = useState(null);
 
-    
     const [materialsChecked, setMaterialsChecked] = useState(new Array(activityContent.materials.length).fill(false));
     const [instructionsChecked, setInstructionsChecked] = useState(new Array(activityContent.instructions.length).fill(false));
 
@@ -45,37 +46,59 @@ const ActivityScreen = ({ navigation, route }) => {
     const processActivity = async (apiEndpoint, apiPayload) => {
         console.log(`processActivity: Sending request with payload:`, apiPayload);
         setIsGenerating(true);
-        try {
-            let response = await axios.post(`http://127.0.0.1:5000/${apiEndpoint}`, apiPayload);
-            console.log("Response received:", response.data);
     
-            let section = 'activity';
-            response.data.response.split(' ').forEach(word => {
+        let shouldContinue = true; // Local variable to control the fetching loop
+    
+        const fetchNextChunk = async () => {
+            if (!shouldContinue) {
+                setIsGenerating(false);
+                return;
+            }
+    
+            let chunkResponse = await axios.get(`http://127.0.0.1:5000/next_chunk/${requestKey}`);
+            if (!chunkResponse.data.response) {
+                setIsGenerating(false);
+                return;
+            }
+    
+            chunkResponse.data.response.split(' ').forEach(word => {
                 section = appendContent(word, section);
+                if (word.trim().toLowerCase() === "materials:") {
+                    shouldContinue = false; // Update the local variable to stop further fetching
+                }
             });
     
-            const requestKey = response.data.request_key;
-            setLoading(false);
+            if (shouldContinue) {
+                setTimeout(fetchNextChunk, 50); // Continue fetching only if the condition is met
+            } else {
+                setIsGenerating(false); // Stop the generation process
+            }
+        };
     
-            const fetchNextChunk = async () => {
-                let chunkResponse = await axios.get(`http://127.0.0.1:5000/next_chunk/${requestKey}`);
-                if (!chunkResponse.data.response) {
-                    setIsGenerating(false);
-                    return;
-                }
-                chunkResponse.data.response.split(' ').forEach(word => {
-                    section = appendContent(word, section);
-                });
-                setTimeout(fetchNextChunk, 50);
-            };
+        // Initial fetch from the API
+        let response = await axios.post(`http://127.0.0.1:5000/${apiEndpoint}`, apiPayload);
+        console.log("Response received:", response.data);
     
-            fetchNextChunk();
-        } catch (error) {
-            console.error("Error in processActivity:", error.message);
-            setLoading(false);
+        let section = 'activity';
+        response.data.response.split(' ').forEach(word => {
+            section = appendContent(word, section);
+            if (word.trim().toLowerCase() === "materials:") {
+                shouldContinue = false; // Stop the initial fetching process
+            }
+        });
+    
+        const requestKey = response.data.request_key;
+        setLoading(false);
+    
+        if (shouldContinue) {
+            fetchNextChunk(); // Start the fetching process
+        } else {
             setIsGenerating(false);
         }
     };
+    
+    
+    
     
     const generateActivity = async () => {
         updateCheckboxes(activityContent.materials.split('\n'), activityContent.instructions.split('\n'));
@@ -94,12 +117,18 @@ const ActivityScreen = ({ navigation, route }) => {
         setCurrentSection('activity');
         processActivity('regenerate', { prompt: initialPrompt });
     };
-    
-    
+
     const appendContent = (word, currentSection) => {
         console.log(`Processing word: ${word.trim()}, Current section: ${currentSection}`);
         
         word = word.trim();
+    
+        // Check for the word "materials:" and stop fetching if encountered
+        if (word.toLowerCase() === "materials:") {
+            console.log("Materials section reached, stopping further fetching");
+            setShouldContinueFetching(false);  // Set the flag to false
+            return 'materials';
+        }
     
         if (word.toLowerCase() === "note:") {
             // Stop appending content once we detect "Note:"
@@ -110,12 +139,6 @@ const ActivityScreen = ({ navigation, route }) => {
         } else if (word.toLowerCase() === "introduction:") {
             console.log("Switched to 'introduction' section");
             return 'introduction';
-        } else if (word.toLowerCase() === "materials:") {
-            console.log("Switched to 'materials' section");
-            return 'materials';
-        } else if (word.toLowerCase() === "instructions:") {
-            console.log("Switched to 'instructions' section");
-            return 'instructions';
         } else if (currentSection !== 'end') {
             setActivityContent(prevContent => {
                 let updatedSection;
@@ -135,6 +158,7 @@ const ActivityScreen = ({ navigation, route }) => {
         }
         return currentSection;
     };
+    
     
 
     useFocusEffect(
