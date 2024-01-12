@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity, Dimensions, SafeAreaView } from 'react-native';
 import axios from 'axios';
 import { useFocusEffect } from '@react-navigation/native';
@@ -204,6 +204,13 @@ const ActivityScreen = ({ navigation, route }) => {
         }, [prompt])
     );
 
+    const scrollViewRef = useRef(null);
+    useEffect(() => {
+        if (scrollViewRef.current) {
+            scrollViewRef.current.scrollToEnd({ animated: true });
+        }
+    }, [activityContent]);
+
     return (
         <SafeAreaView style={{ flex: 1, padding: 20 }}>
             {loading ? (
@@ -213,45 +220,58 @@ const ActivityScreen = ({ navigation, route }) => {
                 </View>
             ) : (
                 <View style={styles.container}>
-                    <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+                    <ScrollView 
+                        contentContainerStyle={styles.scrollContainer} 
+                        showsVerticalScrollIndicator={false}
+                        ref={scrollViewRef}
+                    >
                         <Text style={styles.activityTitle}>{activityContent.activity}</Text>
                         <View style={styles.separator} />
 
                         <Text style={styles.introduction}>{activityContent.introduction}</Text>
                         <View style={styles.separator} />
 
-                        <Text style={styles.titleText}>Materials Needed:</Text>
-                        {activityContent.materials.split('\n').map((material, index) => {
-                            // Remove leading "-" and trim any spaces
-                            material = material.replace(/^-/, '').trim();
-                            return (
-                                <View key={index} style={styles.instructionContainer}>
-                                    <Text style={styles.materialText}>{material}</Text>
-                                    <CircleCheckbox
-                                        value={materialsChecked[index]}
-                                        onValueChange={(newValue) => {
-                                            handleMaterialCheckboxChange(index, newValue);
-                                        }}
-                                        color="#000"
-                                    />
-                                </View>
-                            );
-                        })}
-                        <View style={styles.separator} />
+                        {/* Render Materials Needed section only if there's content */}
+                        {activityContent.materials && activityContent.materials.trim().length > 0 && (
+                            <>
+                                <Text style={styles.titleText}>Materials Needed:</Text>
+                                {activityContent.materials.split('\n').map((material, index) => {
+                                    material = material.replace(/^-/, '').trim();
+                                    return (
+                                        <View key={index} style={styles.instructionContainer}>
+                                            <Text style={styles.materialText}>{material}</Text>
+                                            <CircleCheckbox
+                                                value={materialsChecked[index]}
+                                                onValueChange={(newValue) => {
+                                                    handleMaterialCheckboxChange(index, newValue);
+                                                }}
+                                                color="#000"
+                                            />
+                                        </View>
+                                    );
+                                })}
+                                <View style={styles.separator} />
+                            </>
+                        )}
 
-                        <Text style={styles.titleText}>Instructions:</Text>
-                        {activityContent.instructions.split('\n').map((instruction, index) => (
-                            <View key={index} style={styles.instructionContainer}>
-                                <Text style={styles.instructionText}>{instruction}</Text>
-                                <SquareCheckbox
-                                    value={instructionsChecked[index]}
-                                    onValueChange={(newValue) => {
-                                        handleInstructionCheckboxChange(index, newValue);
-                                    }}
-                                    color="#000"
-                                />
-                            </View>
-                        ))}
+                        {/* Render Instructions section only if there's content */}
+                        {activityContent.instructions && activityContent.instructions.trim().length > 0 && (
+                            <>
+                                <Text style={styles.titleText}>Instructions:</Text>
+                                {activityContent.instructions.split('\n').map((instruction, index) => (
+                                    <View key={index} style={styles.instructionContainer}>
+                                        <Text style={styles.instructionText}>{instruction}</Text>
+                                        <SquareCheckbox
+                                            value={instructionsChecked[index]}
+                                            onValueChange={(newValue) => {
+                                                handleInstructionCheckboxChange(index, newValue);
+                                            }}
+                                            color="#000"
+                                        />
+                                    </View>
+                                ))}
+                            </>
+                        )}
                     </ScrollView>
                     <View style={styles.buttonContainer}>
                     <TouchableOpacity
