@@ -29,6 +29,12 @@ class GenerateRequest(BaseModel):
 class RegenerateRequest(BaseModel):
     prompt: str
 
+class DalleRequest(BaseModel):
+    prompt: str
+    activityTitle: str
+    activityIntro: str
+    n: int = 1
+
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 def generate_request_key(prompt):
@@ -135,6 +141,22 @@ async def regenerate(data: RegenerateRequest):
         'response': first_chunk,
         'request_key': request_key
     }
+
+@app.post("/generate_image")
+async def generate_image(data: DalleRequest):
+    try:
+        response = client.images.generate(
+            model="dall-e-3",
+            prompt=data.prompt + '\n' + "Based on these parameters, generate an image with pixel art style using the following title and description:" + '\n' + "Title:\n" + data.activityTitle + '\n' + "Description:\n" + data.activityIntro,
+            n=data.n,
+            size="1024x1024"  
+        )
+        # Extract the image URL or the image data from the response
+        # Depending on your needs, you might send back the URL or the image data itself
+        image_data = response.data  # This might vary depending on the response structure
+        return {"images": image_data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
 @app.get("/next_chunk/{request_key}")
 async def next_chunk(request_key: str):

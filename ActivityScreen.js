@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity, Dimensions, SafeAreaView } from 'react-native';
+import { View, Text, ScrollView, Image, ActivityIndicator, StyleSheet, TouchableOpacity, Dimensions, SafeAreaView } from 'react-native';
 import axios from 'axios';
 import { useFocusEffect } from '@react-navigation/native';
 import { SquareCheckbox, CircleCheckbox } from "./Checkbox";
@@ -10,6 +10,7 @@ const buttonSize = ((Dimensions.get("window").width - buttonMargin * (numColumns
 
 const ActivityScreen = ({ navigation, route }) => {
     const [activityContent, setActivityContent] = useState({
+        activityImage: null,
         activity: '',
         introduction: '',
         materials: '',
@@ -93,6 +94,7 @@ const ActivityScreen = ({ navigation, route }) => {
                 setTimeout(fetchNextChunk, 50); // Continue fetching only if the condition is met
             } else {
                 setIsGenerating(false); // Stop the generation process
+                generateImage();
             }
         };
     
@@ -129,6 +131,7 @@ const ActivityScreen = ({ navigation, route }) => {
         setLoading(true);
         updateCheckboxes(activityContent.materials.split('\n'), activityContent.instructions.split('\n'));
         setActivityContent({
+            activityImage: null,
             activity: '',
             introduction: '',
             materials: '',
@@ -136,6 +139,31 @@ const ActivityScreen = ({ navigation, route }) => {
         });
         setCurrentSection('activity');
         processActivity('regenerate', { prompt: initialPrompt });
+    };
+
+    const generateImage = async () => {
+        try {
+            const title = activityContent.activity;
+            const introduction = activityContent.introduction;
+            console.log("generateImage: title =", title);
+            console.log("generateImage: introduction =", introduction);
+            console.log("generateImage: prompt =", prompt);
+            const response = await axios.post('http://127.0.0.1:5000/generate_image', {
+                activityTitle: title,
+                activityIntro: introduction,
+                prompt: prompt,
+                n: 1
+            });
+            // Handle the response, such as updating state to display the image
+            console.log('Image generated:', response.data.images);
+            const imageUrl = response.data.images[0].url;
+            setActivityContent(prevContent => ({
+                ...prevContent,
+                activityImage: { uri: imageUrl } // Set as an object with uri key
+            }));
+        } catch (error) {
+            console.error('Error generating image:', error);
+        }
     };
 
     const appendContent = (word, currentSection) => {
@@ -190,6 +218,7 @@ const ActivityScreen = ({ navigation, route }) => {
             console.log("Focus Effect: prompt =", prompt);
             setLoading(true);
             setActivityContent({
+                activityImage: null,
                 activity: '',
                 introduction: '',
                 materials: '',
@@ -225,6 +254,12 @@ const ActivityScreen = ({ navigation, route }) => {
                         showsVerticalScrollIndicator={false}
                         ref={scrollViewRef}
                     >
+                        {activityContent.activityImage && (
+                            <Image 
+                                style={styles.activityImage} 
+                                source={activityContent.activityImage}
+                            />
+                        )}
                         <Text style={styles.activityTitle}>{activityContent.activity}</Text>
                         <View style={styles.separator} />
 
@@ -344,6 +379,12 @@ const styles = StyleSheet.create({
       textAlign: "left",
       fontWeight: "bold",
       paddingTop: 16,
+    },
+    activityImage: {
+        width: '100%',
+        height: 500,
+        resizeMode: 'contain', 
+        borderRadius: 10, 
     },
     buttonContainer: {
         flexDirection: 'row', 
