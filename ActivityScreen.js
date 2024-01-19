@@ -66,7 +66,7 @@ const ActivityScreen = ({ navigation, route }) => {
     const processActivity = async (apiEndpoint, apiPayload) => {
         console.log(`processActivity: Sending request with payload:`, apiPayload);
         setIsGenerating(true);
-    
+
         let shouldContinue = true; // Local variable to control the fetching loop
     
         const fetchNextChunk = async () => {
@@ -113,7 +113,6 @@ const ActivityScreen = ({ navigation, route }) => {
         const requestKey = response.data.request_key;
         console.log("fetchNextChunk called with requestKey1:", requestKey);
         setRequestKey(requestKey);
-        setLoading(false);
     
         if (shouldContinue) {
             fetchNextChunk(); // Start the fetching process
@@ -161,6 +160,7 @@ const ActivityScreen = ({ navigation, route }) => {
                 ...prevContent,
                 activityImage: { uri: imageUrl } // Set as an object with uri key
             }));
+            setLoading(false);
         } catch (error) {
             console.error('Error generating image:', error);
         }

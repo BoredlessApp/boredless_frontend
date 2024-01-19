@@ -147,7 +147,7 @@ async def generate_image(data: DalleRequest):
     try:
         response = client.images.generate(
             model="dall-e-3",
-            prompt=data.prompt + '\n' + "Based on these parameters, generate an image with pixel art style using the following title and description:" + '\n' + "Title:\n" + data.activityTitle + '\n' + "Description:\n" + data.activityIntro,
+            prompt=data.prompt + '\n' + "Based on these parameters, generate an image using pixel art style using the following title and description:" + '\n' + "Title:\n" + data.activityTitle + '\n' + "Description:\n" + data.activityIntro,
             n=data.n,
             size="1024x1024"  
         )
