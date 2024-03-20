@@ -26,8 +26,8 @@ const SavedScreen = () => {
         }
     };
 
-    const navigateToActivityScreen = (activityId) => {
-        navigation.navigate('Activity1', { activityId });
+    const navigateToActivityScreen = (sessionID, savedActivityID) => {
+        navigation.navigate('Activity1', { sessionID, savedActivityID });
     };
     
 
@@ -73,7 +73,7 @@ const SavedScreen = () => {
                                     <Text style={styles.tagStyle}>{activity.mood}</Text>
                                 </View>
                             </View>
-                            <TouchableOpacity onPress={() => navigateToActivityScreen(activity.activity_id)}>
+                            <TouchableOpacity onPress={() => navigateToActivityScreen(activity.sessionID, activity.savedActivityID)}>
                                 <Image source={in_progress_expand} style={styles.inProgressIcon} />
                             </TouchableOpacity>
                         </View>

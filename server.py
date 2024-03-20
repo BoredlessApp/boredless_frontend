@@ -35,25 +35,25 @@ def init_db():
     # Sessions table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS sessions (
-        session_id TEXT PRIMARY KEY
+        sessionID TEXT PRIMARY KEY
     );
     """)
 
     # Activities table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS activities (
-        activity_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        session_id TEXT NOT NULL,
+        activityID INTEGER PRIMARY KEY AUTOINCREMENT,
+        sessionID TEXT NOT NULL,
         content TEXT NOT NULL,
-        FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+        FOREIGN KEY (sessionID) REFERENCES sessions(sessionID)
     );
     """)
 
     # Saved Activities table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS saved_activities (
-        saved_activity_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        session_id TEXT NOT NULL,
+        savedActivityID INTEGER PRIMARY KEY AUTOINCREMENT,
+        sessionID TEXT NOT NULL,
         activityImage TEXT NOT NULL,
         title TEXT NOT NULL,
         introduction TEXT,
@@ -64,7 +64,7 @@ def init_db():
         participants TEXT,
         timeOfDay TEXT,
         typeOfActivity TEXT,
-        FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+        FOREIGN KEY (sessionID) REFERENCES sessions(sessionID)
     );
     """)
 
@@ -83,7 +83,7 @@ class GenerateRequest(BaseModel):
     typeOfActivity: str
 
 class RegenerateRequest(BaseModel):
-    session_id: str
+    sessionID: str
     location: str
     mood: str
     participants: str
@@ -91,7 +91,7 @@ class RegenerateRequest(BaseModel):
     typeOfActivity: str
 
 class SaveActivityRequest(BaseModel):
-    session_id: str
+    sessionID: str
     activityImage: str
     title: str
     introduction: str
@@ -120,10 +120,10 @@ def generate_id(location, mood, participants, timeOfDay, typeOfActivity):
     """
     prompt_string = f"{location}-{mood}-{participants}-{timeOfDay}-{typeOfActivity}"
     # Use SHA-256 hash function to generate a unique identifier for the given prompt
-    session_id = hashlib.sha256(prompt_string.encode('utf-8')).hexdigest()
-    return session_id
+    sessionID = hashlib.sha256(prompt_string.encode('utf-8')).hexdigest()
+    return sessionID
 
-async def generate_activity(session_id, location, mood, participants, timeOfDay, typeOfActivity):
+async def generate_activity(sessionID, location, mood, participants, timeOfDay, typeOfActivity):
     system_prompt = f"""
         Utilizing your extensive knowledge and creativity, develop a distinctive and imaginative activity based on {typeOfActivity}. 
         This activity should be perfectly suited for {participants} participant(s) in a friends relationship. 
@@ -163,10 +163,10 @@ async def generate_activity(session_id, location, mood, participants, timeOfDay,
 
     # Connect to the SQLite database
     async with aiosqlite.connect(DATABASE_NAME) as db:
-        await db.execute("INSERT OR IGNORE INTO sessions (session_id) VALUES (?)", (session_id,))
+        await db.execute("INSERT OR IGNORE INTO sessions (sessionID) VALUES (?)", (sessionID,))
         await db.commit()
         
-        cursor = await db.execute("SELECT content FROM activities WHERE session_id = ?", (session_id,))
+        cursor = await db.execute("SELECT content FROM activities WHERE sessionID = ?", (sessionID,))
         activities = await cursor.fetchall()
         
         # If activities exist for this session, use them to continue the conversation
@@ -184,29 +184,29 @@ async def generate_activity(session_id, location, mood, participants, timeOfDay,
         activity_content = response.choices[0].message.content.strip()
 
         # Save the new activity in the database
-        await db.execute("INSERT INTO activities (session_id, content) VALUES (?, ?)", (session_id, activity_content))
+        await db.execute("INSERT INTO activities (sessionID, content) VALUES (?, ?)", (sessionID, activity_content))
         await db.commit()
         
     return activity_content
 
 @app.post("/generate")
 async def generate(data: GenerateRequest):
-    session_id = generate_id(data.location, data.mood, data.participants, data.timeOfDay, data.typeOfActivity)
-    print(session_id)
+    sessionID = generate_id(data.location, data.mood, data.participants, data.timeOfDay, data.typeOfActivity)
+    print(sessionID)
     generated_text = await generate_activity(
-        session_id=session_id,
+        sessionID=sessionID,
         location=data.location, 
         mood=data.mood, 
         participants=data.participants, 
         timeOfDay=data.timeOfDay, 
         typeOfActivity=data.typeOfActivity
     )
-    return {'response': generated_text, 'session_id': session_id}
+    return {'response': generated_text, 'sessionID': sessionID}
 
 @app.post("/regenerate")
 async def regenerate(data: RegenerateRequest):
     generated_text = await generate_activity(
-        session_id=data.session_id,
+        sessionID=data.sessionID,
         location=data.location, 
         mood=data.mood, 
         participants=data.participants, 
@@ -274,25 +274,28 @@ async def save_activity(data: SaveActivityRequest):
     async with aiosqlite.connect(DATABASE_NAME) as db:
         await db.execute("""
             INSERT INTO saved_activities (
-                session_id, activityImage, title, introduction, materials, instructions,
+                sessionID, activityImage, title, introduction, materials, instructions,
                 location, mood, participants, timeOfDay, typeOfActivity
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            data.session_id, data.activityImage, data.title, data.introduction, data.materials, data.instructions,
+            data.sessionID, data.activityImage, data.title, data.introduction, data.materials, data.instructions,
             data.location, data.mood, data.participants, data.timeOfDay, data.typeOfActivity
         ))
         await db.commit()
     
     return {"message": "Activity saved successfully"}
 
-@app.get("/get_activity/{activity_id}")
-async def get_activity(activity_id: int):
+@app.get("/get_activity/{sessionID}/{savedActivityID}")
+async def get_activity(sessionID: str, savedActivityID: int):
     async with aiosqlite.connect(DATABASE_NAME) as db:
-        cursor = await db.execute("SELECT * FROM saved_activities WHERE saved_activity_id = ?", (activity_id))
+        cursor = await db.execute("""
+            SELECT * FROM saved_activities 
+            WHERE sessionID = ? AND savedActivityID = ?
+        """, (sessionID, savedActivityID ))
         activity = await cursor.fetchone()
         if activity:
             return {
-                "session_id": activity[1],
+                "sessionID": activity[1],
                 "activityImage": activity[2],
                 "title": activity[3],
                 "introduction": activity[4],
@@ -311,13 +314,27 @@ async def get_activity(activity_id: int):
 @app.get("/get_saved_activities")
 async def get_saved_activities():
     async with aiosqlite.connect(DATABASE_NAME) as db:
-        cursor = await db.execute("SELECT session_id, activityImage, title, introduction, materials, instructions, location, mood, participants, timeOfDay, typeOfActivity  FROM saved_activities")
+        cursor = await db.execute("SELECT savedActivityID, sessionID, activityImage, title, introduction, materials, instructions, location, mood, participants, timeOfDay, typeOfActivity FROM saved_activities")
         rows = await cursor.fetchall()
         activities = [
-            {"session_id": row[0], "activityImage": row[1], "title": row[2], "introduction": row[3], "materials": row[4], "instructions": row[5], "location": row[6], "mood": row[7], "participants": row[8], "timeOfDay": row[9], "typeOfActivity": row[10]}
+            {
+                "savedActivityID": row[0],
+                "sessionID": row[1],
+                "activityImage": row[2],
+                "title": row[3],
+                "introduction": row[4],
+                "materials": row[5],
+                "instructions": row[6],
+                "location": row[7],
+                "mood": row[8],
+                "participants": row[9],
+                "timeOfDay": row[10],
+                "typeOfActivity": row[11],
+            }
             for row in rows
         ]
     return activities
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=5000)

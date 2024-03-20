@@ -9,15 +9,38 @@ const numColumns = 2;
 const buttonMargin = 5;
 const buttonSize = ((Dimensions.get("window").width - buttonMargin * (numColumns * 2)) / numColumns) * 0.55;
 const ExpandActivityScreen = ({ route, navigation }) => {
-    const { activityId } = route.params;
-
+    const { sessionID, savedActivityID } = route.params;
     const [activityContent, setActivityContent] = useState(null);
+    const [materialsChecked, setMaterialsChecked] = useState([]);
+    const [instructionsChecked, setInstructionsChecked] = useState([]);
+
+
+    const handleMaterialCheckboxChange = (index, newValue) => {
+        const updatedMaterialsChecked = [...materialsChecked];
+        updatedMaterialsChecked[index] = newValue;
+        setMaterialsChecked(updatedMaterialsChecked);
+    };
+
+    const handleInstructionCheckboxChange = (index, newValue) => {
+        const updatedInstructionsChecked = [...instructionsChecked];
+        updatedInstructionsChecked[index] = newValue;
+        setInstructionsChecked(updatedInstructionsChecked);
+    };
+    const updateCheckboxes = (materials, instructions) => {
+        setMaterialsChecked(new Array(materials.length).fill(false));
+        setInstructionsChecked(new Array(instructions.length).fill(false));
+    };
+
+    const completeActivityButtonHandler = () => {
+        navigation.navigate('Home');
+    };
+
 
     useEffect(() => {
         const fetchActivityDetails = async () => {
-            console.log(`Fetching details for activity ID: ${activityId}`); // Log the ID being used for fetching
+            console.log(`Fetching details for session ID: ${sessionID}, activity ID: ${savedActivityID}`); // Log the ID being used for fetching
             try {
-                const response = await axios.get(`http://127.0.0.1:5000/get_activity/${activityId}`);
+                const response = await axios.get(`http://127.0.0.1:5000/get_activity/${sessionID}/${savedActivityID}`);
                 console.log('Activity details fetched successfully:', response.data); // Log successful fetch
                 setActivityContent(response.data);
             } catch (error) {
@@ -27,13 +50,18 @@ const ExpandActivityScreen = ({ route, navigation }) => {
         };
 
         fetchActivityDetails();
-    }, [activityId]);
+    }, [sessionID, savedActivityID]);
 
     // Log the current state of activityContent to see if and when it gets updated
     useEffect(() => {
         console.log('Current activityContent state:', activityContent);
     }, [activityContent]);
 
+    if (!activityContent) {
+        return <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <Text>Loading...</Text>
+        </SafeAreaView>;
+    }
 
     //Page Rendering
     return (
@@ -44,14 +72,14 @@ const ExpandActivityScreen = ({ route, navigation }) => {
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Activity Image */}
-                    {/* {activityContent.activityImage && (
+                    {activityContent.activityImage && (
                         <View style={[styles.imageContainer]}>
                             <Image
                                 style={styles.activityImage}
-                                source={{ uri: activityContent.activityImage }}
+                                source={{ uri: `data:image/png;base64,${activityContent.activityImage}` }}
                             />
                         </View>
-                    )} */}
+                    )}
 
                     {/* Activity Title */}
                     <Text style={styles.activityTitle}>{activityContent.title}</Text>
@@ -61,52 +89,44 @@ const ExpandActivityScreen = ({ route, navigation }) => {
                     <Text style={styles.introText}>{activityContent.introduction}</Text>
                     <View style={styles.separator} />
 
-                    
+
                     {/* Activity Materials Needed*/}
                     <Text style={styles.titleText}>Materials Needed</Text>
-                    {revealContent && activityContent.materials && activityContent.materials.trim().length > 0 && (
-                        <>
-                            <View>
-                                {activityContent.materials.split('\n').map((material, index) => {
-                                    material = material.replace(/^-/, '•').trim();
-                                    return (
-                                        <View key={index} style={styles.instructionContainer}>
-                                            <Text style={styles.materialText}>{material}</Text>
-                                            <CircleCheckbox
-                                                value={materialsChecked[index]}
-                                                onValueChange={(newValue) => {
-                                                    handleMaterialCheckboxChange(index, newValue);
-                                                }}
-                                                color="#000"
-                                            />
-                                        </View>
-                                    );
-                                })}
-                            </View>
-                        </>
-                    )}
+                    <View>
+                        {activityContent.materials.split('\n').map((material, index) => {
+                            material = material.replace(/^-/, '•').trim();
+                            return (
+                                <View key={index} style={styles.instructionContainer}>
+                                    <Text style={styles.materialText}>{material}</Text>
+                                    <CircleCheckbox
+                                        value={materialsChecked[index]}
+                                        onValueChange={(newValue) => {
+                                            handleMaterialCheckboxChange(index, newValue);
+                                        }}
+                                        color="#000"
+                                    />
+                                </View>
+                            );
+                        })}
+                    </View>
                     <View style={styles.separator} />
-                    
+
                     {/* Activity Instructions*/}
                     <Text style={styles.titleText}>Instructions</Text>
-                    {revealContent && activityContent.instructions && activityContent.instructions.trim().length > 0 && (
-                        <>
-                            <View>
-                                {activityContent.instructions.split('\n').map((instruction, index) => (
-                                    <View key={index} style={styles.instructionContainer}>
-                                        <Text style={styles.instructionText}>{instruction}</Text>
-                                        <SquareCheckbox
-                                            value={instructionsChecked[index]}
-                                            onValueChange={(newValue) => {
-                                                handleInstructionCheckboxChange(index, newValue);
-                                            }}
-                                            color="#000"
-                                        />
-                                    </View>
-                                ))}
+                    <View>
+                        {activityContent.instructions.split('\n').map((instruction, index) => (
+                            <View key={index} style={styles.instructionContainer}>
+                                <Text style={styles.instructionText}>{instruction}</Text>
+                                <SquareCheckbox
+                                    value={instructionsChecked[index]}
+                                    onValueChange={(newValue) => {
+                                        handleInstructionCheckboxChange(index, newValue);
+                                    }}
+                                    color="#000"
+                                />
                             </View>
-                        </>
-                    )}
+                        ))}
+                    </View>
                 </ScrollView>
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity
@@ -206,8 +226,8 @@ const styles = StyleSheet.create({
         alignItems: "center",
         shadowColor: '#000',
         shadowOffset: {
-        width: 0,
-        height: 4,
+            width: 0,
+            height: 4,
         },
         shadowOpacity: 0.3,
         shadowRadius: 5,
@@ -257,15 +277,15 @@ const styles = StyleSheet.create({
         // iOS Shadow
         shadowColor: '#000', // Shadow color
         shadowOffset: {
-        width: 0,
-        height: 4,
+            width: 0,
+            height: 4,
         },
         shadowOpacity: 0.3, // Shadow opacity
         shadowRadius: 5, // Blur radius
 
         // Android Shadow
         elevation: 8,
-      },
+    },
     completeButtonText: {
         color: "#fff",
         fontFamily: 'Montserrat-Bold',

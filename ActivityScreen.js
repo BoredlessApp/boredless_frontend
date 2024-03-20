@@ -108,7 +108,7 @@ const ActivityScreen = ({ route }) => {
         console.log('SESSION ID:', sessionID)
 
         // Prepare the correct payload
-        const payload = isRegenerate ? { session_id: sessionID, ...prompt } : { ...prompt };
+        const payload = isRegenerate ? { sessionID: sessionID, ...prompt } : { ...prompt };
         console.log("Sending payload to /regenerate:", payload);
         try {
             let response = await axios.post(`http://127.0.0.1:5000/${apiEndpoint}`, payload, {
@@ -116,7 +116,7 @@ const ActivityScreen = ({ route }) => {
             });
 
             if (!isRegenerate) {
-                setSessionID(response.data.session_id);
+                setSessionID(response.data.sessionID);
             }
 
             const fullText = response.data.response;
@@ -224,7 +224,7 @@ const ActivityScreen = ({ route }) => {
     
         // Prepare the payload with the activity content and additional details
         const payload = {
-            session_id: sessionID,
+            sessionID: sessionID,
             activityImage: activityImageBase64,
             title: activityContent.title,
             introduction: activityContent.introduction,
