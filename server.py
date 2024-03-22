@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from openai import OpenAI
 import uvicorn
 import os
@@ -14,6 +14,9 @@ from stability_sdk import client
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
 import aiosqlite
 import sqlite3
+from typing import List
+import json
+from datetime import datetime
 
 app = FastAPI()
 
@@ -64,6 +67,10 @@ def init_db():
         participants TEXT,
         timeOfDay TEXT,
         typeOfActivity TEXT,
+        materialsChecked TEXT,
+        instructionsChecked TEXT,
+        isCompleted INTEGER DEFAULT FALSE,
+        dateCompleted TEXT,
         FOREIGN KEY (sessionID) REFERENCES sessions(sessionID)
     );
     """)
@@ -103,6 +110,14 @@ class SaveActivityRequest(BaseModel):
     participants: str
     timeOfDay: str
     typeOfActivity: str
+    materialsChecked: List[bool] = Field(default=[])
+    instructionsChecked: List[bool] = Field(default=[])
+    isCompleted: bool = False
+
+class UpdateActivityRequest(BaseModel):
+    materialsChecked: List[bool] = Field(default=[])
+    instructionsChecked: List[bool] = Field(default=[])
+    isCompleted: bool
 
 class ImageRequest(BaseModel):
     activityTitle: str
@@ -270,16 +285,20 @@ async def generate_image(data: ImageRequest):
 
 @app.post("/save_activity")
 async def save_activity(data: SaveActivityRequest):
-    print(data) 
+    print(data)
+    materialsChecked = json.dumps(data.materialsChecked)
+    instructionsChecked = json.dumps(data.instructionsChecked)
+
     async with aiosqlite.connect(DATABASE_NAME) as db:
         await db.execute("""
             INSERT INTO saved_activities (
                 sessionID, activityImage, title, introduction, materials, instructions,
-                location, mood, participants, timeOfDay, typeOfActivity
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                location, mood, participants, timeOfDay, typeOfActivity,
+                materialsChecked, instructionsChecked
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             data.sessionID, data.activityImage, data.title, data.introduction, data.materials, data.instructions,
-            data.location, data.mood, data.participants, data.timeOfDay, data.typeOfActivity
+            data.location, data.mood, data.participants, data.timeOfDay, data.typeOfActivity, materialsChecked, instructionsChecked
         ))
         await db.commit()
     
@@ -289,11 +308,13 @@ async def save_activity(data: SaveActivityRequest):
 async def get_activity(sessionID: str, savedActivityID: int):
     async with aiosqlite.connect(DATABASE_NAME) as db:
         cursor = await db.execute("""
-            SELECT * FROM saved_activities 
+            SELECT * FROM saved_activities
             WHERE sessionID = ? AND savedActivityID = ?
         """, (sessionID, savedActivityID ))
         activity = await cursor.fetchone()
         if activity:
+            materialsChecked = json.loads(activity[12])
+            instructionsChecked = json.loads(activity[13])
             return {
                 "sessionID": activity[1],
                 "activityImage": activity[2],
@@ -306,18 +327,47 @@ async def get_activity(sessionID: str, savedActivityID: int):
                 "participants": activity[9],
                 "timeOfDay": activity[10],
                 "typeOfActivity": activity[11],
+                "materialsChecked": materialsChecked,
+                "instructionsChecked": instructionsChecked,
             }
         else:
             raise HTTPException(status_code=404, detail="Activity not found")
+
+@app.put("/update_activity/{sessionID}/{savedActivityID}")
+async def update_activity(sessionID: str, savedActivityID: int, data: UpdateActivityRequest):
+    materialsChecked = json.dumps(data.materialsChecked)
+    instructionsChecked = json.dumps(data.instructionsChecked)
+    isCompleted = 1 if data.isCompleted else 0
+    dateCompleted = datetime.now().strftime("%Y-%m-%d")
+
+    async with aiosqlite.connect(DATABASE_NAME) as db:
+        await db.execute("""
+            UPDATE saved_activities SET
+                materialsChecked = ?,
+                instructionsChecked = ?,
+                isCompleted = ?,
+                dateCompleted = ?
+            WHERE sessionID = ? AND savedActivityID = ?
+        """, (materialsChecked, instructionsChecked, isCompleted, dateCompleted, sessionID, savedActivityID))
+        
+        await db.commit()
+        
+        if db.total_changes == 0:
+            raise HTTPException(status_code=404, detail="Activity not found")
+
+    return {"message": "Activity updated successfully"}
 
 
 @app.get("/get_saved_activities")
 async def get_saved_activities():
     async with aiosqlite.connect(DATABASE_NAME) as db:
-        cursor = await db.execute("SELECT savedActivityID, sessionID, activityImage, title, introduction, materials, instructions, location, mood, participants, timeOfDay, typeOfActivity FROM saved_activities")
+        cursor = await db.execute("SELECT * FROM saved_activities")  # Adjusted to select all columns
         rows = await cursor.fetchall()
-        activities = [
-            {
+        activities = []
+        for row in rows:
+            materialsChecked = json.loads(row[12])  # Adjust the index according to your schema
+            instructionsChecked = json.loads(row[13])  # Adjust the index according to your schema
+            activities.append({
                 "savedActivityID": row[0],
                 "sessionID": row[1],
                 "activityImage": row[2],
@@ -330,11 +380,12 @@ async def get_saved_activities():
                 "participants": row[9],
                 "timeOfDay": row[10],
                 "typeOfActivity": row[11],
-            }
-            for row in rows
-        ]
+                "materialsChecked": materialsChecked,
+                "instructionsChecked": instructionsChecked,
+                "isCompleted": bool(row[14]),
+                "dateCompleted": row[15]
+            })
     return activities
-
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=5000)

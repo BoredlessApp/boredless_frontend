@@ -26,11 +26,14 @@ const ActivityScreen = ({ route }) => {
     const scrollViewRef = useRef(null);
     const [materialsChecked, setMaterialsChecked] = useState(new Array(activityContent.materials.length).fill(false));
     const [instructionsChecked, setInstructionsChecked] = useState(new Array(activityContent.instructions.length).fill(false));
+    const [isActivityCompleted, setIsActivityCompleted] = useState(false);
+
     const [imageAnimation] = useState(new Animated.Value(0));
     const [titleAnimation] = useState(new Animated.Value(0));
     const [introAnimation] = useState(new Animated.Value(0));
     const [materialsOpacity] = useState(new Animated.Value(0));
     const [instructionsOpacity] = useState(new Animated.Value(0));
+
 
     const handleMaterialCheckboxChange = (index, newValue) => {
         const updatedMaterialsChecked = [...materialsChecked];
@@ -176,6 +179,7 @@ const ActivityScreen = ({ route }) => {
                 instructions: instructions.trim(),
             });
             // Now generate the image with the title
+            console.log("generateActivity generate activity image");
             await generateImage(title.trim()); // Make sure this function updates activityContent including the image
         } catch (error) {
             console.error('Error processing activity:', error.response ? error.response.data : error);
@@ -210,28 +214,43 @@ const ActivityScreen = ({ route }) => {
     
     const startActivityButtonHandler = async () => {
         console.log("Start Activity button pressed");
+        setRevealContent(true); // Update UI to reveal the activity content
+        fadeInMaterialsAndInstructions(); // Start animation for materials and instructions
+        scrollToBottom(); // Scroll to the bottom of the screen/view
+        setShowCompleteButton(true); // Show the "Complete" button
+    };
+
+    const bookmarkActivityButtonHandler = () => {
+        console.log("Bookmark Activity button pressed");
+    }
     
-        // Before proceeding, check if the activityContent and activityImage are set
-        if (!activityContent || !activityContent.activityImage) {
-            console.error('Activity content or image is not fully set.');
-            return; // Early return to prevent saving incomplete data
-        }
+    const continueLaterButtonHandler = async () => {
+        console.log("Continue Later button pressed");
+        await saveActivity();
+        navigation.navigate('Home');
+    };
     
-        // Assuming activityImage is directly the base64 string or null if not set
-        const activityImageBase64 = activityContent.activityImage.startsWith('data:image/png;base64,')
-            ? activityContent.activityImage.split(',')[1]
-            : activityContent.activityImage;
-    
-        // Prepare the payload with the activity content and additional details
+    const completeActivityButtonHandler = async () => {
+        console.log("Complete Activity button pressed");
+        await saveActivity();
+        navigation.navigate('Activity');
+    };
+
+    const saveActivity = async () => {
+        const cleanMaterialsChecked = materialsChecked.map(item => !!item);
+        const cleanInstructionsChecked = instructionsChecked.map(item => !!item);
+
         const payload = {
             sessionID: sessionID,
-            activityImage: activityImageBase64,
+            activityImage: activityContent.activityImage.startsWith('data:image/png;base64,')
+                ? activityContent.activityImage.split(',')[1]
+                : activityContent.activityImage,
             title: activityContent.title,
             introduction: activityContent.introduction,
             materials: activityContent.materials,
             instructions: activityContent.instructions,
-    
-            // Prompt details
+            materialsChecked: cleanMaterialsChecked,
+            instructionsChecked: cleanInstructionsChecked,
             location: prompt.location,
             mood: prompt.mood,
             participants: prompt.participants,
@@ -249,16 +268,6 @@ const ActivityScreen = ({ route }) => {
         } catch (error) {
             console.error('Error saving activity:', error.response ? error.response.data : error);
         }
-    
-        setRevealContent(true); // Update UI to reveal the activity content
-        fadeInMaterialsAndInstructions(); // Start animation for materials and instructions
-        scrollToBottom(); // Scroll to the bottom of the screen/view
-        setShowCompleteButton(true); // Show the "Complete" button
-    };
-    
-    
-    const completeActivityButtonHandler = () => {
-        navigation.navigate('Home');
     };
 
     useFocusEffect(
@@ -280,13 +289,6 @@ const ActivityScreen = ({ route }) => {
     );
 
     useEffect(() => {
-        if (activityContent.title && !activityContent.activityImage) {
-            console.log("Activity content updated, generating image...");
-            generateImage(activityContent.title);
-        }
-    }, [activityContent]);
-
-    useEffect(() => {
         return () => {
             if (scrollIntervalId) {
                 clearInterval(scrollIntervalId);
@@ -294,6 +296,24 @@ const ActivityScreen = ({ route }) => {
         };
     }, []);
 
+    useEffect(() => {
+        if (activityContent) {
+            // Assuming materials and instructions are separated by new lines
+            const materialsCount = activityContent.materials.split('\n').filter(Boolean).length;
+            const instructionsCount = activityContent.instructions.split('\n').filter(Boolean).length;
+            
+            setMaterialsChecked(new Array(materialsCount).fill(false));
+            setInstructionsChecked(new Array(instructionsCount).fill(false));
+        }
+    }, [activityContent]);
+
+    useEffect(() => {
+        const allMaterialsChecked = materialsChecked.every(Boolean); // True if all materials are checked
+        const allInstructionsChecked = instructionsChecked.every(Boolean); // True if all instructions are checked
+    
+        setIsActivityCompleted(allMaterialsChecked && allInstructionsChecked);
+    }, [materialsChecked, instructionsChecked]);
+    
     //Page Rendering
     return (
         <SafeAreaView style={{ flex: 1, padding: 20, backgroundColor: '#fafafc', }}>
@@ -416,20 +436,22 @@ const ActivityScreen = ({ route }) => {
                         <View style={styles.buttonContainer}>
                             <TouchableOpacity
                                 style={[styles.button, styles.continueLaterButton]} // Ensure you have styles defined for this
-                                onPress={completeActivityButtonHandler}
+                                onPress={continueLaterButtonHandler}
                             >
                                 <Text style={[styles.buttonText, styles.continueLaterButtonText]}>
                                     Continue Later
                                 </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.button, styles.completeButton]} // Ensure you have styles defined for this
-                                onPress={completeActivityButtonHandler}
+                                style={[styles.button, styles.completeButton, !isActivityCompleted && styles.buttonDisabled]} // Apply disabled style if not isActivityCompleted
+                                onPress={() => isActivityCompleted && completeActivityButtonHandler()}
+                                disabled={!isActivityCompleted} // Disable button interaction if not isActivityCompleted
                             >
                                 <Text style={[styles.buttonText, styles.completeButtonText]}>
                                     Complete
                                 </Text>
                             </TouchableOpacity>
+
                         </View>
                     )}
                 </View>
@@ -468,7 +490,6 @@ const styles = StyleSheet.create({
         flex: 1,
         margin: 10,
     },
-
     // Scrolling Effect
     scrollContainer: {
         flexGrow: 1,
@@ -534,7 +555,6 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.3,
         shadowRadius: 5,
-
         // Android Shadow
         elevation: 8,
     },
@@ -592,6 +612,10 @@ const styles = StyleSheet.create({
     completeButtonText: {
         color: "#fff",
         fontFamily: 'Montserrat-Bold',
+    },
+    buttonDisabled: {
+        backgroundColor: '#ccc', // Example disabled color
+        // Other styling to indicate disabled state...
     },
 
     // Seperator

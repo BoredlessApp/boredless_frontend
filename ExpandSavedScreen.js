@@ -4,15 +4,12 @@ import axios from 'axios';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as Progress from 'react-native-progress';
 
-
 // Images
 const in_progress_expand_activity = require('./assets/in_progress_activity_expand.png');
 const completed_expand_activity = require('./assets/completed_activity_expand.png');
-const expand_arrow = require('./assets/expand_arrow.png');
 
-
-const SavedScreen = () => {
-    const navigation = useNavigation();
+const ExpandSavedScreen = ({ route, navigation }) => {
+    const { section } = route.params;
     const totalChecks = 10;
     const [inProgressActivities, setInProgressActivities] = useState([]);
     const [completedActivities, setCompletedActivities] = useState([]);
@@ -30,16 +27,13 @@ const SavedScreen = () => {
         } catch (error) {
             console.error('Failed to fetch saved activities:', error);
         } finally {
-            setLoading(false); // Hide loading indicator once fetching is done
+            setLoading(false);
         }
     };
 
     const navigateToActivityScreen = (sessionID, savedActivityID) => {
         navigation.navigate('ExpandActivity', { sessionID, savedActivityID });
     };
-    const navigateToExpandSavedScreen = (section) => {
-        navigation.navigate('ExpandSaved', { section });
-    }
 
     useFocusEffect(
         React.useCallback(() => {
@@ -48,43 +42,45 @@ const SavedScreen = () => {
         }, [])
     );
 
+    // Loading screen
+    if (loading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fafafc'}}>
+                <ActivityIndicator size="large" color="#000" />
+                <Text style={{ marginTop: 20, fontFamily: 'Montserrat-Regular' }}>Loading activities...</Text>
+            </View>
+        );
+    }
+
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#fafafc' }}>
-            {loading ? (
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <ActivityIndicator size="large" color="#000" />
-                    <Text style={{ marginTop: 20 }}>Loading activity...</Text>
-                </View>
-            ) : (
+            {section ? (
                 <ScrollView
                     style={styles.container}
                     showsVerticalScrollIndicator={false}
                 >
                     {/* In Progress Section */}
                     <View style={styles.collapsedActivityContainer}>
-                        <Text style={styles.sectionTitle}>In Progress</Text>
-                        <TouchableOpacity onPress={() => navigateToExpandSavedScreen(true)}>
-                            <Image source={expand_arrow}  style={styles.arrowIcon}/>
-                        </TouchableOpacity>
+                        <Text style={styles.sectionTitle}>Activities</Text>
                     </View>
                     <View style={styles.separator} />
 
                     {inProgressActivities.length > 0 ? (
-                        inProgressActivities.slice(0, 3).map((activity, index) => (
+                        inProgressActivities.map((activity, index) => (
                             <TouchableOpacity key={index} onPress={() => navigateToActivityScreen(activity.sessionID, activity.savedActivityID)}>
                                 <View key={index} style={styles.inProgressActivityContainer}>
                                     <View style={{ flex: 1, }}>
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
                                             <Text style={styles.inProgressTagTitle}>{activity.title}</Text>
                                         </View>
-                                        
+
                                         {/* Progress Bar */}
                                         <View>
                                             <Progress.Bar
                                                 style={styles.progressBar}
                                                 progress={
-                                                    ((Object.values(activity.materialsChecked || {}).filter(value => value).length) + 
-                                                    (Object.values(activity.instructionsChecked || {}).filter(value => value).length)) / totalChecks
+                                                    ((Object.values(activity.materialsChecked || {}).filter(value => value).length) +
+                                                        (Object.values(activity.instructionsChecked || {}).filter(value => value).length)) / totalChecks
                                                 }
                                                 width={225}
                                                 color={'#3B3B3B'}
@@ -117,18 +113,20 @@ const SavedScreen = () => {
                             </View>
                         </View>
                     )}
-
+                </ScrollView>
+            ) : (
+                <ScrollView
+                    style={styles.container}
+                    showsVerticalScrollIndicator={false}
+                >
                     {/* Completed Section */}
                     <View style={styles.collapsedActivityContainer}>
                         <Text style={styles.sectionTitle}>Completed</Text>
-                        <TouchableOpacity onPress={() => navigateToExpandSavedScreen(false)}>
-                            <Image source={expand_arrow}  style={styles.arrowIcon}/>
-                        </TouchableOpacity>
                     </View>
                     <View style={styles.separator} />
 
                     {completedActivities.length > 0 ? (
-                        completedActivities.slice(0, 3).map((activity, index) => (
+                        completedActivities.map((activity, index) => (
                             <TouchableOpacity key={index} onPress={() => navigateToActivityScreen(activity.sessionID, activity.savedActivityID)}>
                                 <View key={index} style={styles.completedActivityContainer}>
                                     <View style={{ flex: 1, justifyContent: 'center' }}>
@@ -193,8 +191,8 @@ const styles = StyleSheet.create({
         marginVertical: 15,
     },
     arrowIcon: {
-        width: 16,
-        height: 16,
+        width: 18,
+        height: 18,
     },
     expandIcon: {
         width: 18,
@@ -280,4 +278,4 @@ const styles = StyleSheet.create({
 
 });
 
-export default SavedScreen;
+export default ExpandSavedScreen;

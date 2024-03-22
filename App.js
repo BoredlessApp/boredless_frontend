@@ -25,6 +25,7 @@ import unfocusSettingsIcon from './assets/unfocus_account_icon.png';
 import backButtonImage from './assets/back-button.png';
 
 import { useFonts } from 'expo-font';
+import ExpandSavedScreen from './ExpandSavedScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -115,10 +116,25 @@ const BottomTabNavigator = () => {
         })}
       />
       <Tab.Screen 
-        name="Activity1" 
+        name="ExpandActivity" 
         component={ExpandActivityScreen} 
         options={({ navigation }) => ({
           tabBarButton: () => null,
+          headerTitle: "Activity", 
+          headerLeft: () => (
+            <TouchableWithoutFeedback onPress={() => navigation.navigate('Saved')}>
+                <Image source={backButtonImage} style={{ marginLeft: 10, height: 32, width: 32 }} />
+            </TouchableWithoutFeedback>
+          ),
+          headerBackTitleVisible: false
+        })}
+      />
+      <Tab.Screen 
+        name="ExpandSaved" 
+        component={ExpandSavedScreen} 
+        options={({ navigation }) => ({
+          tabBarButton: () => null,
+          headerTitle: "Activity List", 
           headerLeft: () => (
             <TouchableWithoutFeedback onPress={() => navigation.navigate('Saved')}>
                 <Image source={backButtonImage} style={{ marginLeft: 10, height: 32, width: 32 }} />

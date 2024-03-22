@@ -13,7 +13,9 @@ const ExpandActivityScreen = ({ route, navigation }) => {
     const [activityContent, setActivityContent] = useState(null);
     const [materialsChecked, setMaterialsChecked] = useState([]);
     const [instructionsChecked, setInstructionsChecked] = useState([]);
-
+    const [isActivityCompleted, setIsActivityCompleted] = useState(false);
+    const [lastUpdated, setLastUpdated] = useState(new Date().toISOString());
+    const [loading, setLoading] = useState(true);
 
     const handleMaterialCheckboxChange = (index, newValue) => {
         const updatedMaterialsChecked = [...materialsChecked];
@@ -26,23 +28,43 @@ const ExpandActivityScreen = ({ route, navigation }) => {
         updatedInstructionsChecked[index] = newValue;
         setInstructionsChecked(updatedInstructionsChecked);
     };
-    const updateCheckboxes = (materials, instructions) => {
-        setMaterialsChecked(new Array(materials.length).fill(false));
-        setInstructionsChecked(new Array(instructions.length).fill(false));
+
+    const buttonHandler = async () => {
+        await saveActivityChanges();
+        navigation.navigate('Saved');
     };
 
-    const completeActivityButtonHandler = () => {
-        navigation.navigate('Home');
+    const saveActivityChanges = async () => {
+        try {
+            const response = await axios.put(`http://127.0.0.1:5000/update_activity/${sessionID}/${savedActivityID}`, {
+                // Include other necessary fields as required by your SaveActivityRequest model
+                materialsChecked: materialsChecked,
+                instructionsChecked: instructionsChecked,
+                isCompleted: isActivityCompleted,
+                lastUpdated: lastUpdated,
+            }, {
+                headers: { 'Content-Type': 'application/json' }
+            });
+            console.log("Activity updated successfully", response.data);
+        } catch (error) {
+            console.error('Failed to update activity:', error.response ? error.response.data : error);
+        }
     };
-
-
+    
     useEffect(() => {
         const fetchActivityDetails = async () => {
+            setLoading(true);
             console.log(`Fetching details for session ID: ${sessionID}, activity ID: ${savedActivityID}`); // Log the ID being used for fetching
             try {
                 const response = await axios.get(`http://127.0.0.1:5000/get_activity/${sessionID}/${savedActivityID}`);
                 console.log('Activity details fetched successfully:', response.data); // Log successful fetch
+                
+                // Update activity content
                 setActivityContent(response.data);
+                setMaterialsChecked(response.data.materialsChecked || new Array(response.data.materials.split('\n').length).fill(false));
+                setInstructionsChecked(response.data.instructionsChecked || new Array(response.data.instructions.split('\n').length).fill(false));
+                setLastUpdated(response.data.lastUpdated);
+                setLoading(false);
             } catch (error) {
                 console.error('Failed to fetch activity details:', error);
                 console.log(`Error details: ${error.response ? error.response.data : 'No additional error information'}`); // Log error details
@@ -57,15 +79,21 @@ const ExpandActivityScreen = ({ route, navigation }) => {
         console.log('Current activityContent state:', activityContent);
     }, [activityContent]);
 
-    if (!activityContent) {
-        return <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Text>Loading...</Text>
-        </SafeAreaView>;
-    }
+    useEffect(() => {
+        const allMaterialsChecked = materialsChecked.every(Boolean); // True if all materials are checked
+        const allInstructionsChecked = instructionsChecked.every(Boolean); // True if all instructions are checked
+        setIsActivityCompleted(allMaterialsChecked && allInstructionsChecked);
+    }, [materialsChecked, instructionsChecked]);
 
     //Page Rendering
     return (
         <SafeAreaView style={{ flex: 1, padding: 20, backgroundColor: '#fafafc', }}>
+            {loading ? (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color="#000" />
+                    <Text style={{ marginTop: 20 }}>Loading activity...</Text>
+                </View>
+            ) : (
             <View style={styles.container}>
                 <ScrollView
                     contentContainerStyle={styles.scrollContainer}
@@ -131,15 +159,16 @@ const ExpandActivityScreen = ({ route, navigation }) => {
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity
                         style={[styles.button, styles.continueLaterButton]} // Ensure you have styles defined for this
-                        onPress={completeActivityButtonHandler}
+                        onPress={buttonHandler}
                     >
                         <Text style={[styles.buttonText, styles.continueLaterButtonText]}>
                             Continue Later
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={[styles.button, styles.completeButton]} // Ensure you have styles defined for this
-                        onPress={completeActivityButtonHandler}
+                        style={[styles.button, styles.completeButton, !isActivityCompleted && styles.buttonDisabled]} // Apply disabled style if not isActivityCompleted
+                        onPress={() => isActivityCompleted && buttonHandler()}
+                        disabled={!isActivityCompleted} // Disable button interaction if not isActivityCompleted
                     >
                         <Text style={[styles.buttonText, styles.completeButtonText]}>
                             Complete
@@ -147,6 +176,7 @@ const ExpandActivityScreen = ({ route, navigation }) => {
                     </TouchableOpacity>
                 </View>
             </View>
+            )}
         </SafeAreaView>
     );
 };
@@ -290,6 +320,9 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontFamily: 'Montserrat-Bold',
     },
+    buttonDisabled: {
+        backgroundColor: '#ccc',
+    },
 
     // Seperator
     separator: {
@@ -297,6 +330,13 @@ const styles = StyleSheet.create({
         width: "100%",
         backgroundColor: "#DFDEDE",
         marginVertical: 15,
+    },
+
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255, 255, 255, 0.8)', // Change this color to your preference for the blur effect
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });
 
