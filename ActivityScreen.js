@@ -224,16 +224,10 @@ const ActivityScreen = ({ route }) => {
         console.log("Bookmark Activity button pressed");
     }
     
-    const continueLaterButtonHandler = async () => {
+    const buttonHandler = async () => {
         console.log("Continue Later button pressed");
         await saveActivity();
-        navigation.navigate('Home');
-    };
-    
-    const completeActivityButtonHandler = async () => {
-        console.log("Complete Activity button pressed");
-        await saveActivity();
-        navigation.navigate('Activity');
+        navigation.navigate('Generate');
     };
 
     const saveActivity = async () => {
@@ -256,6 +250,7 @@ const ActivityScreen = ({ route }) => {
             participants: prompt.participants,
             timeOfDay: prompt.timeOfDay,
             typeOfActivity: prompt.typeOfActivity,
+            isCompleted: isActivityCompleted,
         };
     
         console.log("Payload to /save_activity:", payload);
@@ -436,7 +431,7 @@ const ActivityScreen = ({ route }) => {
                         <View style={styles.buttonContainer}>
                             <TouchableOpacity
                                 style={[styles.button, styles.continueLaterButton]} // Ensure you have styles defined for this
-                                onPress={continueLaterButtonHandler}
+                                onPress={buttonHandler}
                             >
                                 <Text style={[styles.buttonText, styles.continueLaterButtonText]}>
                                     Continue Later
@@ -444,7 +439,7 @@ const ActivityScreen = ({ route }) => {
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.button, styles.completeButton, !isActivityCompleted && styles.buttonDisabled]} // Apply disabled style if not isActivityCompleted
-                                onPress={() => isActivityCompleted && completeActivityButtonHandler()}
+                                onPress={buttonHandler}
                                 disabled={!isActivityCompleted} // Disable button interaction if not isActivityCompleted
                             >
                                 <Text style={[styles.buttonText, styles.completeButtonText]}>

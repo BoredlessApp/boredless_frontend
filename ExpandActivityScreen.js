@@ -33,7 +33,7 @@ const ExpandActivityScreen = ({ route, navigation }) => {
         await saveActivityChanges();
         navigation.navigate('Saved');
     };
-
+ 
     const saveActivityChanges = async () => {
         try {
             const response = await axios.put(`http://127.0.0.1:5000/update_activity/${sessionID}/${savedActivityID}`, {
@@ -45,7 +45,7 @@ const ExpandActivityScreen = ({ route, navigation }) => {
             }, {
                 headers: { 'Content-Type': 'application/json' }
             });
-            console.log("Activity updated successfully", response.data);
+            console.log("Activity updated successfully");
         } catch (error) {
             console.error('Failed to update activity:', error.response ? error.response.data : error);
         }
@@ -57,7 +57,7 @@ const ExpandActivityScreen = ({ route, navigation }) => {
             console.log(`Fetching details for session ID: ${sessionID}, activity ID: ${savedActivityID}`); // Log the ID being used for fetching
             try {
                 const response = await axios.get(`http://127.0.0.1:5000/get_activity/${sessionID}/${savedActivityID}`);
-                console.log('Activity details fetched successfully:', response.data); // Log successful fetch
+                console.log('Activity details fetched successfully:');
                 
                 // Update activity content
                 setActivityContent(response.data);
@@ -73,11 +73,6 @@ const ExpandActivityScreen = ({ route, navigation }) => {
 
         fetchActivityDetails();
     }, [sessionID, savedActivityID]);
-
-    // Log the current state of activityContent to see if and when it gets updated
-    useEffect(() => {
-        console.log('Current activityContent state:', activityContent);
-    }, [activityContent]);
 
     useEffect(() => {
         const allMaterialsChecked = materialsChecked.every(Boolean); // True if all materials are checked
@@ -167,8 +162,8 @@ const ExpandActivityScreen = ({ route, navigation }) => {
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.button, styles.completeButton, !isActivityCompleted && styles.buttonDisabled]} // Apply disabled style if not isActivityCompleted
-                        onPress={() => isActivityCompleted && buttonHandler()}
-                        disabled={!isActivityCompleted} // Disable button interaction if not isActivityCompleted
+                        onPress={buttonHandler}
+                        disabled={!isActivityCompleted} 
                     >
                         <Text style={[styles.buttonText, styles.completeButtonText]}>
                             Complete

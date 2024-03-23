@@ -71,7 +71,6 @@ const SavedScreen = () => {
 
                     {inProgressActivities.length > 0 ? (
                         inProgressActivities.slice(0, 3).map((activity, index) => (
-                            <TouchableOpacity key={index} onPress={() => navigateToActivityScreen(activity.sessionID, activity.savedActivityID)}>
                                 <View key={index} style={styles.inProgressActivityContainer}>
                                     <View style={{ flex: 1, }}>
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
@@ -106,7 +105,6 @@ const SavedScreen = () => {
                                         <Image source={in_progress_expand_activity} style={styles.expandIcon} />
                                     </TouchableOpacity>
                                 </View>
-                            </TouchableOpacity>
                         ))
                     ) : (
                         <View style={styles.inProgressActivityContainer}>
@@ -129,7 +127,6 @@ const SavedScreen = () => {
 
                     {completedActivities.length > 0 ? (
                         completedActivities.slice(0, 3).map((activity, index) => (
-                            <TouchableOpacity key={index} onPress={() => navigateToActivityScreen(activity.sessionID, activity.savedActivityID)}>
                                 <View key={index} style={styles.completedActivityContainer}>
                                     <View style={{ flex: 1, justifyContent: 'center' }}>
 
@@ -153,7 +150,6 @@ const SavedScreen = () => {
                                         <Image source={completed_expand_activity} style={styles.expandIcon} />
                                     </TouchableOpacity>
                                 </View>
-                            </TouchableOpacity>
                         ))
                     ) : (
                         <View style={styles.completedActivityContainer}>

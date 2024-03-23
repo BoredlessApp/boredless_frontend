@@ -112,7 +112,7 @@ class SaveActivityRequest(BaseModel):
     typeOfActivity: str
     materialsChecked: List[bool] = Field(default=[])
     instructionsChecked: List[bool] = Field(default=[])
-    isCompleted: bool = False
+    isCompleted: bool
 
 class UpdateActivityRequest(BaseModel):
     materialsChecked: List[bool] = Field(default=[])
@@ -289,16 +289,20 @@ async def save_activity(data: SaveActivityRequest):
     materialsChecked = json.dumps(data.materialsChecked)
     instructionsChecked = json.dumps(data.instructionsChecked)
 
+    # Assuming isCompleted determines whether dateCompleted should be set
+    dateCompleted = datetime.now().strftime("%Y-%m-%d") if data.isCompleted else None
+
     async with aiosqlite.connect(DATABASE_NAME) as db:
         await db.execute("""
             INSERT INTO saved_activities (
                 sessionID, activityImage, title, introduction, materials, instructions,
                 location, mood, participants, timeOfDay, typeOfActivity,
-                materialsChecked, instructionsChecked
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                materialsChecked, instructionsChecked, isCompleted, dateCompleted
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             data.sessionID, data.activityImage, data.title, data.introduction, data.materials, data.instructions,
-            data.location, data.mood, data.participants, data.timeOfDay, data.typeOfActivity, materialsChecked, instructionsChecked
+            data.location, data.mood, data.participants, data.timeOfDay, data.typeOfActivity, 
+            materialsChecked, instructionsChecked, data.isCompleted, dateCompleted
         ))
         await db.commit()
     
@@ -329,6 +333,7 @@ async def get_activity(sessionID: str, savedActivityID: int):
                 "typeOfActivity": activity[11],
                 "materialsChecked": materialsChecked,
                 "instructionsChecked": instructionsChecked,
+                "isCompleted": bool(activity[14]),
             }
         else:
             raise HTTPException(status_code=404, detail="Activity not found")
