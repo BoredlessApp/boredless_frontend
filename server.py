@@ -1,24 +1,26 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from openai import OpenAI
 import uvicorn
 import os
 import hashlib
 import asyncio
 import base64
 import io
-from stability_sdk import client
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
 import aiosqlite
 import sqlite3
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from openai import OpenAI
+from stability_sdk import client
 from typing import List
+from aiocache import Cache
 import json
 from datetime import datetime
 
 app = FastAPI()
+cache = Cache(Cache.MEMORY)
 
 # Allow CORS for all origins
 app.add_middleware(
@@ -28,7 +30,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 DATABASE_NAME = "activity_sessions.db"
 
 def init_db():
@@ -45,9 +46,10 @@ def init_db():
     # Activities table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS activities (
-        activityID INTEGER PRIMARY KEY AUTOINCREMENT,
+        activityID INTEGER NOT NULL,
         sessionID TEXT NOT NULL,
         content TEXT NOT NULL,
+        PRIMARY KEY (sessionID, activityID),
         FOREIGN KEY (sessionID) REFERENCES sessions(sessionID)
     );
     """)
@@ -71,9 +73,14 @@ def init_db():
         instructionsChecked TEXT,
         isCompleted INTEGER DEFAULT FALSE,
         dateCompleted TEXT,
+        dateModified TEXT,
         FOREIGN KEY (sessionID) REFERENCES sessions(sessionID)
     );
     """)
+
+    # Creating indexes on frequently accessed columns
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_session ON saved_activities (sessionID);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_activity ON saved_activities (savedActivityID);")
 
     conn.commit()
     conn.close()
@@ -151,7 +158,7 @@ async def generate_activity(sessionID, location, mood, participants, timeOfDay, 
         FORMAT:
 
         Activity:
-        Provide a simple title for the activity.
+        Provide a short title for the activity. (Avoid using quotation marks, colons, or special characters, and the word: Challenge)
 
         Introduction:
         Write a detailed introduction that sets the stage for the activity, encapsulating its essence and appeal.
@@ -176,32 +183,29 @@ async def generate_activity(sessionID, location, mood, participants, timeOfDay, 
         Insert a short note here
     """
 
-    # Connect to the SQLite database
     async with aiosqlite.connect(DATABASE_NAME) as db:
         await db.execute("INSERT OR IGNORE INTO sessions (sessionID) VALUES (?)", (sessionID,))
         await db.commit()
-        
-        cursor = await db.execute("SELECT content FROM activities WHERE sessionID = ?", (sessionID,))
-        activities = await cursor.fetchall()
-        
-        # If activities exist for this session, use them to continue the conversation
-        if activities:
-            messages = [{"role": "system", "content": system_prompt}] + [{"role": "assistant", "content": act[0]} for act in activities]
-        else:
-            messages = [{"role": "system", "content": system_prompt}]
-        
+
+        cursor = await db.execute("SELECT MAX(activityID) FROM activities WHERE sessionID = ?", (sessionID,))
+        row = await cursor.fetchone()
+        max_activity_id = row[0] if row[0] is not None else 0
+        next_activity_id = max_activity_id + 1
+
         response = openai_client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=messages,
+            messages=[{"role": "system", "content": system_prompt}],
             temperature=1,
             max_tokens=1024,
         )
         activity_content = response.choices[0].message.content.strip()
 
-        # Save the new activity in the database
-        await db.execute("INSERT INTO activities (sessionID, content) VALUES (?, ?)", (sessionID, activity_content))
+        await db.execute(
+            "INSERT INTO activities (activityID, sessionID, content) VALUES (?, ?, ?)",
+            (next_activity_id, sessionID, activity_content)
+        )
         await db.commit()
-        
+
     return activity_content
 
 @app.post("/generate")
@@ -229,7 +233,6 @@ async def regenerate(data: RegenerateRequest):
         typeOfActivity=data.typeOfActivity
     )
     return {'response': generated_text}
-
 
 @app.post("/generate_image")
 async def generate_image(data: ImageRequest):
@@ -291,18 +294,19 @@ async def save_activity(data: SaveActivityRequest):
 
     # Assuming isCompleted determines whether dateCompleted should be set
     dateCompleted = datetime.now().strftime("%Y-%m-%d") if data.isCompleted else None
+    dateModified = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     async with aiosqlite.connect(DATABASE_NAME) as db:
         await db.execute("""
             INSERT INTO saved_activities (
                 sessionID, activityImage, title, introduction, materials, instructions,
                 location, mood, participants, timeOfDay, typeOfActivity,
-                materialsChecked, instructionsChecked, isCompleted, dateCompleted
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                materialsChecked, instructionsChecked, isCompleted, dateCompleted, dateModified
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             data.sessionID, data.activityImage, data.title, data.introduction, data.materials, data.instructions,
             data.location, data.mood, data.participants, data.timeOfDay, data.typeOfActivity, 
-            materialsChecked, instructionsChecked, data.isCompleted, dateCompleted
+            materialsChecked, instructionsChecked, data.isCompleted, dateCompleted, dateModified
         ))
         await db.commit()
     
@@ -310,6 +314,11 @@ async def save_activity(data: SaveActivityRequest):
 
 @app.get("/get_activity/{sessionID}/{savedActivityID}")
 async def get_activity(sessionID: str, savedActivityID: int):
+    cache_key = f"{sessionID}-{savedActivityID}"
+    activity = await cache.get(cache_key)
+    if activity:
+        return activity
+    
     async with aiosqlite.connect(DATABASE_NAME) as db:
         cursor = await db.execute("""
             SELECT * FROM saved_activities
@@ -344,6 +353,7 @@ async def update_activity(sessionID: str, savedActivityID: int, data: UpdateActi
     instructionsChecked = json.dumps(data.instructionsChecked)
     isCompleted = 1 if data.isCompleted else 0
     dateCompleted = datetime.now().strftime("%Y-%m-%d")
+    dateModified = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     async with aiosqlite.connect(DATABASE_NAME) as db:
         await db.execute("""
@@ -351,9 +361,10 @@ async def update_activity(sessionID: str, savedActivityID: int, data: UpdateActi
                 materialsChecked = ?,
                 instructionsChecked = ?,
                 isCompleted = ?,
-                dateCompleted = ?
+                dateCompleted = ?,
+                dateModified = ?
             WHERE sessionID = ? AND savedActivityID = ?
-        """, (materialsChecked, instructionsChecked, isCompleted, dateCompleted, sessionID, savedActivityID))
+        """, (materialsChecked, instructionsChecked, isCompleted, dateCompleted, dateModified, sessionID, savedActivityID))
         
         await db.commit()
         
@@ -366,12 +377,12 @@ async def update_activity(sessionID: str, savedActivityID: int, data: UpdateActi
 @app.get("/get_saved_activities")
 async def get_saved_activities():
     async with aiosqlite.connect(DATABASE_NAME) as db:
-        cursor = await db.execute("SELECT * FROM saved_activities")  # Adjusted to select all columns
+        cursor = await db.execute("SELECT * FROM saved_activities ORDER BY dateModified DESC")
         rows = await cursor.fetchall()
         activities = []
         for row in rows:
-            materialsChecked = json.loads(row[12])  # Adjust the index according to your schema
-            instructionsChecked = json.loads(row[13])  # Adjust the index according to your schema
+            materialsChecked = json.loads(row[12])
+            instructionsChecked = json.loads(row[13])
             activities.append({
                 "savedActivityID": row[0],
                 "sessionID": row[1],
@@ -388,7 +399,8 @@ async def get_saved_activities():
                 "materialsChecked": materialsChecked,
                 "instructionsChecked": instructionsChecked,
                 "isCompleted": bool(row[14]),
-                "dateCompleted": row[15]
+                "dateCompleted": row[15],
+                "dateModified": row[16]
             })
     return activities
 

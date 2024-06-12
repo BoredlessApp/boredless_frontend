@@ -9,7 +9,6 @@ import * as Progress from 'react-native-progress';
 const in_progress_expand_activity = require('./assets/in_progress_activity_expand.png');
 const completed_expand_activity = require('./assets/completed_activity_expand.png');
 const expand_arrow = require('./assets/expand_arrow.png');
-const adventure = require('./assets/adventure.png');
 
 
 const HomeScreen = () => {
@@ -20,7 +19,7 @@ const HomeScreen = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchActivities = async () => {
-    setLoading(true);
+    // setLoading(true);
     try {
       const response = await axios.get('http://127.0.0.1:5000/get_saved_activities');
       const fetchedActivities = response.data;
@@ -50,19 +49,22 @@ const HomeScreen = () => {
   );
 
   const renderInProgressTags = (tagsString) => {
-    return tagsString.split(',').map((tag, index) => (
+    const tags = tagsString.split(',').slice(0, 2);
+    return tags.map((tag, index) => (
       <View key={index}>
         <Text style={styles.inProgressTagStyle}>{tag.trim()}</Text>
       </View>
     ));
   };
+  
   const renderCompletedTags = (tagsString) => {
-    return tagsString.split(',').map((tag, index) => (
+    const tags = tagsString.split(',').slice(0, 2);
+    return tags.map((tag, index) => (
       <View key={index}>
         <Text style={styles.completedTagStyle}>{tag.trim()}</Text>
       </View>
     ));
-  };
+  }; 
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fafafc'}}>
@@ -76,15 +78,17 @@ const HomeScreen = () => {
           style={styles.container}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.startActivityContainer}>
-            <View>
-              <Text style={{ fontFamily: 'Montserrat-SemiBold', color: '#FBFBFB', fontSize: 18, marginBottom: 8}}>Start Activity</Text>
-              <Text style={{ fontFamily: 'Montserrat-Regular', color: '#FBFBFB', fontSize: 13,  width: '80%'}}>Tap to Begin Your Next Memorable Adventure!</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Generate')}>
+            <View style={styles.startActivityContainer}>
+              <View>
+                <Text style={{ fontFamily: 'Montserrat-SemiBold', color: '#FBFBFB', fontSize: 18, marginBottom: 8}}>Start Activity</Text>
+                <Text style={{ fontFamily: 'Montserrat-Regular', color: '#FBFBFB', fontSize: 13,  width: '80%'}}>Tap to Begin Your Next Memorable Adventure!</Text>
+              </View>
+              <View onPress={() => navigation.navigate('Generate')}>
+                <Image source={completed_expand_activity} style={styles.expandIcon} />
+              </View>
             </View>
-            <TouchableOpacity onPress={() => navigation.navigate('Generate')}>
-              <Image source={completed_expand_activity} style={styles.expandIcon} />
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
 
           {/* In Progress Section */}
           <View style={styles.collapsedActivityContainer}>
@@ -175,7 +179,7 @@ const HomeScreen = () => {
           </ScrollView>
 
           {/* Trending Section */}
-          <View style={styles.collapsedActivityContainer}>
+          {/* <View style={styles.collapsedActivityContainer}>
             <Text style={styles.sectionTitle}>Trending Activities</Text>
             <TouchableOpacity onPress={() => navigateToExpandSavedScreen(true)}>
               <Image source={expand_arrow} style={styles.arrowIcon} />
@@ -190,10 +194,10 @@ const HomeScreen = () => {
                   <View style={{ flex: 1, }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
                       <Text style={styles.inProgressTagTitle}>{activity.title}</Text>
-                    </View>
+                    </View> */}
 
                     {/* Progress Bar */}
-                    <View>
+                    {/* <View>
                       <Progress.Bar
                         style={styles.progressBar}
                         progress={
@@ -227,7 +231,7 @@ const HomeScreen = () => {
             ) : (
               <Text style={styles.emptySectionText}>There are no in Progress Activities</Text>
             )}
-          </ScrollView>
+          </ScrollView> */}
 
           {/* Completed Section */}
           <View style={styles.collapsedActivityContainer}>
@@ -244,7 +248,7 @@ const HomeScreen = () => {
                 <View key={index} style={styles.completedActivityContainer}>
                   <View style={{ flex: 1, justifyContent: 'center' }}>
 
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
+                    <View>
                       <Text style={styles.completedTagTitle}>{activity.title}</Text>
                     </View>
 
@@ -288,7 +292,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
+    marginTop: 10,
+      },
   sectionTitle: {
     fontSize: 18,
     fontFamily: 'Montserrat-SemiBold',
@@ -313,13 +318,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#CCCCCC',
     height: 125,
-    width: 225,
+    width: 250,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginRight: 15,
     marginBottom: 15,
-    padding: 10,
+    padding: 12,
     borderRadius: 12,
   },
   tagContainer: {
@@ -356,28 +361,34 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#373737',
     height: 125,
-    width: 225,
+    width: 250,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginRight: 15,
     marginBottom: 15,
-    padding: 10,
+    padding: 12,
     borderRadius: 12,
+  },
+  emptySectionText: {
+    fontFamily: 'Montserrat-Regular',
+    fontSize: 14,
+    color: '#1A1A1A',
+    marginBottom: 15,
   },
   inProgressTagTitle: {
     fontFamily: 'Montserrat-SemiBold',
-    fontSize: 12,
+    fontSize: 14,
     color: '#1A1A1A'
   },
   completedTagTitle: {
     fontFamily: 'Montserrat-SemiBold',
-    fontSize: 12,
+    fontSize: 14,
     color: '#FBFBFB'
   },
   dateCompleted: {
     fontFamily: 'Montserrat-Medium',
-    fontSize: 10,
+    fontSize: 11,
     marginVertical: 5,
     color: '#EDEDED',
   },

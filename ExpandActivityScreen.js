@@ -30,14 +30,13 @@ const ExpandActivityScreen = ({ route, navigation }) => {
     };
 
     const buttonHandler = async () => {
-        await saveActivityChanges();
+        await updateActivity();
         navigation.navigate('Saved');
     };
  
-    const saveActivityChanges = async () => {
+    const updateActivity = async () => {
         try {
             const response = await axios.put(`http://127.0.0.1:5000/update_activity/${sessionID}/${savedActivityID}`, {
-                // Include other necessary fields as required by your SaveActivityRequest model
                 materialsChecked: materialsChecked,
                 instructionsChecked: instructionsChecked,
                 isCompleted: isActivityCompleted,

@@ -12,7 +12,7 @@ import {
   Dimensions
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-
+import './stylesheet.css'
 const numColumns = 3;
 const buttonMargin = 5;
 const buttonSize = ((Dimensions.get('window').width - buttonMargin * (numColumns * 2)) / numColumns) * 0.55;
@@ -228,7 +228,7 @@ const ItemButton = ({
   <TouchableOpacity onPress={onPress} style={styles.touchable}>
     <View
       style={[
-        isParticipant ? styles.buttonParticipant : styles.button,
+        isParticipant ? [styles.buttonParticipant, styles.shadow] : [styles.button, styles.shadow],
         {
           borderColor: isSelected ? "#2b2b2b" : "#fff",
         },
@@ -353,7 +353,7 @@ const GenerateScreen = () => {
               <ActivityIndicator size="large" color="#000" />
               <Text style={styles.loadingText}>Generating...</Text>
             </View>
-          </View>
+        </View>
         </Modal>
         <View style={{ paddingVertical: 12, paddingHorizontal: 5 }}>
 
@@ -437,18 +437,6 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     paddingVertical: 10,
     alignSelf: 'stretch',
-
-    // iOS Shadow
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4, 
-    },
-    shadowOpacity: 0.3, 
-    shadowRadius: 5, 
-
-    // Android Shadow
-    elevation: 8,
   },
   generateButtonText: {
     flexDirection: 'row',
@@ -468,15 +456,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: buttonSize / 3,
   },
+  innerShadow: {
+    shadowOffset: {
+        width: 0,
+        height: 3,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
+    elevation: 4,
+  },
+  dropShadow: {
+    shadowOffset: {
+        width: 0,
+        height: 3,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
+    elevation: 4,
+  },
   buttonParticipant: {
     width: buttonSize * 0.8,
     height: buttonSize * 0.8,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderRadius: buttonSize / 2,
-    
   },
   participantText: {
     fontSize: 18,

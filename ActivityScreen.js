@@ -112,7 +112,7 @@ const ActivityScreen = ({ route }) => {
 
         // Prepare the correct payload
         const payload = isRegenerate ? { sessionID: sessionID, ...prompt } : { ...prompt };
-        console.log("Sending payload to /regenerate:", payload);
+        //console.log("Sending payload to /regenerate:", payload);
         try {
             let response = await axios.post(`http://127.0.0.1:5000/${apiEndpoint}`, payload, {
                 headers: { 'Content-Type': 'application/json' }
@@ -179,7 +179,6 @@ const ActivityScreen = ({ route }) => {
                 instructions: instructions.trim(),
             });
             // Now generate the image with the title
-            console.log("generateActivity generate activity image");
             await generateImage(title.trim()); // Make sure this function updates activityContent including the image
         } catch (error) {
             console.error('Error processing activity:', error.response ? error.response.data : error);
@@ -204,7 +203,7 @@ const ActivityScreen = ({ route }) => {
                     ...prevContent,
                     activityImage: `data:image/png;base64,${imageBase64}`,
                 }));
-            } 
+            }
         } catch (error) {
             console.error('Error generating image:', error);
         } finally {
@@ -214,15 +213,16 @@ const ActivityScreen = ({ route }) => {
     
     const startActivityButtonHandler = async () => {
         console.log("Start Activity button pressed");
+        //await saveActivity();
         setRevealContent(true); // Update UI to reveal the activity content
         fadeInMaterialsAndInstructions(); // Start animation for materials and instructions
         scrollToBottom(); // Scroll to the bottom of the screen/view
         setShowCompleteButton(true); // Show the "Complete" button
     };
 
-    const bookmarkActivityButtonHandler = () => {
-        console.log("Bookmark Activity button pressed");
-    }
+    // const bookmarkActivityButtonHandler = () => {
+    //     console.log("Bookmark Activity button pressed");
+    // }
     
     const buttonHandler = async () => {
         console.log("Continue Later button pressed");
@@ -253,21 +253,37 @@ const ActivityScreen = ({ route }) => {
             isCompleted: isActivityCompleted,
         };
     
-        console.log("Payload to /save_activity:", payload);
+        //console.log("Payload to /save_activity:", payload);
     
         try {
             const response = await axios.post('http://127.0.0.1:5000/save_activity', payload, {
                 headers: { 'Content-Type': 'application/json' }
             });
-            console.log("Activity saved successfully", response.data); // Log success message and any response data
+            //console.log("Activity saved successfully", response.data); // Log success message and any response data
         } catch (error) {
             console.error('Error saving activity:', error.response ? error.response.data : error);
         }
     };
 
+    const updateActivity = async () => {
+        try {
+            const response = await axios.put(`http://127.0.0.1:5000/update_activity/${sessionID}/${savedActivityID}`, {
+                materialsChecked: materialsChecked,
+                instructionsChecked: instructionsChecked,
+                isCompleted: isActivityCompleted,
+                lastUpdated: lastUpdated,
+            }, {
+                headers: { 'Content-Type': 'application/json' }
+            });
+            console.log("Activity updated successfully");
+        } catch (error) {
+            console.error('Failed to update activity:', error.response ? error.response.data : error);
+        }
+    };
+
     useFocusEffect(
         React.useCallback(() => {
-            console.log("Focus Effect: prompt =", prompt);
+            //console.log("Focus Effect: prompt =", prompt);
             setLoading(true);
             setActivityContent({
                 activityImage: null,
@@ -277,7 +293,7 @@ const ActivityScreen = ({ route }) => {
                 instructions: ''
             });
             if (prompt) {
-                console.log("Setting initialPrompt:", prompt);
+                //console.log("Setting initialPrompt:", prompt);
                 generateActivity(false);
             }
         }, [prompt])

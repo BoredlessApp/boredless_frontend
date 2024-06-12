@@ -16,7 +16,7 @@ const ExpandSavedScreen = ({ route, navigation }) => {
     const [loading, setLoading] = useState(true);
 
     const fetchActivities = async () => {
-        setLoading(true);
+        // setLoading(true);
         try {
             const response = await axios.get('http://127.0.0.1:5000/get_saved_activities');
             const fetchedActivities = response.data;
@@ -34,6 +34,15 @@ const ExpandSavedScreen = ({ route, navigation }) => {
     const navigateToActivityScreen = (sessionID, savedActivityID) => {
         navigation.navigate('ExpandActivity', { sessionID, savedActivityID });
     };
+
+    const renderTags = (tagsString, style) => {
+        const tags = tagsString.split(',').slice(0, 2);
+        return tags.map((tag, index) => (
+          <View key={index}>
+            <Text style={style}>{tag.trim()}</Text>
+          </View>
+        ));
+      };   
 
     useFocusEffect(
         React.useCallback(() => {
@@ -93,9 +102,9 @@ const ExpandSavedScreen = ({ route, navigation }) => {
                                         </View>
 
                                         <View style={styles.tagContainer}>
-                                            <Text style={styles.inProgressTagStyle}>{activity.typeOfActivity}</Text>
+                                            {renderTags(activity.typeOfActivity, styles.inProgressTagStyle)}
                                             <Text style={styles.inProgressTagStyle}>{activity.location}</Text>
-                                            <Text style={styles.inProgressTagStyle}>{activity.mood}</Text>
+                                            {renderTags(activity.mood, styles.inProgressTagStyle)}
                                         </View>
                                     </View>
                                     <TouchableOpacity onPress={() => navigateToActivityScreen(activity.sessionID, activity.savedActivityID)}>
@@ -142,9 +151,9 @@ const ExpandSavedScreen = ({ route, navigation }) => {
                                         </View>
 
                                         <View style={styles.tagContainer}>
-                                            <Text style={styles.completedTagStyle}>{activity.typeOfActivity}</Text>
-                                            <Text style={styles.completedTagStyle}>{activity.location}</Text>
-                                            <Text style={styles.completedTagStyle}>{activity.mood}</Text>
+                                            {renderTags(activity.typeOfActivity, styles.inProgressTagStyle)}
+                                            <Text style={styles.inProgressTagStyle}>{activity.location}</Text>
+                                            {renderTags(activity.mood, styles.inProgressTagStyle)}
                                         </View>
                                     </View>
                                     <TouchableOpacity onPress={() => navigateToActivityScreen(activity.sessionID, activity.savedActivityID)}>
