@@ -34,3 +34,5 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 activity_sessions.db
+__pycache__
+python_venv

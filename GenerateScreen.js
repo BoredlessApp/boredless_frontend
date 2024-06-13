@@ -9,10 +9,10 @@ import {
   ActivityIndicator,
   Modal,
   StyleSheet,
-  Dimensions
+  Dimensions,
+  TextInput
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import './stylesheet.css'
 const numColumns = 3;
 const buttonMargin = 5;
 const buttonSize = ((Dimensions.get('window').width - buttonMargin * (numColumns * 2)) / numColumns) * 0.55;
@@ -217,32 +217,36 @@ const MOOD = [
 
 const Separator = () => <View style={styles.separator} />;
 
-const ItemButton = ({
-  img,
-  onPress,
-  isSelected,
-  title,
-  isParticipant,
-  dataType,
-}) => (
-  <TouchableOpacity onPress={onPress} style={styles.touchable}>
-    <View
-      style={[
-        isParticipant ? [styles.buttonParticipant, styles.shadow] : [styles.button, styles.shadow],
-        {
-          borderColor: isSelected ? "#2b2b2b" : "#fff",
-        },
-      ]}
+const ItemButton = ({ img, onPress, isSelected, title, isParticipant, dataType }) => {
+  const [isPressed, setIsPressed] = useState(false);
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      onPressIn={() => setIsPressed(true)}
+      onPressOut={() => setIsPressed(false)}
+      activeOpacity={1} // Disables the fading effect by setting opacity to 100%
+      style={styles.touchable}
     >
-      {dataType === "participants" ? (
-        <Text style={styles.participantText}>{title}</Text>
-      ) : (
-        <Image source={img} style={styles.image} />
-      )}
-    </View>
-    {dataType !== "participants" && <Text style={styles.title}>{title}</Text>}
-  </TouchableOpacity>
-);
+      <View
+        style={[
+          isParticipant ? styles.buttonParticipant : styles.button,
+          isPressed ? styles.dropShadowPressed : styles.dropShadow,
+          {
+            borderColor: isSelected ? "#2b2b2b" : "#fff",
+          },
+        ]}
+      >
+        {dataType === "participants" ? (
+          <Text style={styles.participantText}>{title}</Text>
+        ) : (
+          <Image source={img} style={styles.image} />
+        )}
+      </View>
+      {dataType !== "participants" && <Text style={styles.title}>{title}</Text>}
+    </TouchableOpacity>
+  );
+};
 
 const GenerateScreen = () => {
   const combinedData = [
@@ -259,6 +263,8 @@ const GenerateScreen = () => {
     return acc;
   }, {});
   const [loading, setLoading] = useState(false);
+  const [keywords, setKeywords] = useState([]);
+  const [keywordValue, setKeywordValue] = useState("");
   const [selectedData, setSelectedData] = useState(dataHashMap);
   const selectedItems = Object.values(selectedData).filter(
     (item) => item.selected
@@ -296,6 +302,13 @@ const GenerateScreen = () => {
     });
   };
 
+  const handleCustomKeyword = () => {
+    if (keywordValue) {
+      setKeywords((prevKeywords) => [keywordValue, ...prevKeywords]);
+      setKeywordValue("");
+    }
+};
+
   const generatePrompt = () => {
     const activities = selectedItems
       .filter(item => item.dataType === "activity")
@@ -310,18 +323,19 @@ const GenerateScreen = () => {
     const timeOfDay = selectedItems.find(item => item.dataType === "time-of-day")?.title || "any";
     const participants = selectedItems.find(item => item.dataType === "participants")?.title || "any";
     const location = selectedItems.find(item => item.dataType === "location")?.title || "any";
-
     return {
       typeOfActivity: activities || "any",
       timeOfDay,
       participants,
       location,
-      mood: moods || "any"
+      mood: moods || "any",
+      keywords: keywords.length > 0 ? keywords.join(", ") : "any"
     };
   };
 
   const navigateToActivityScreen = () => {
     const promptObject = generatePrompt();
+    console.log("Navigating with prompt:", promptObject);
     navigation.navigate('Activity', { prompt: promptObject });
   };
 
@@ -342,6 +356,15 @@ const GenerateScreen = () => {
     );
   };
   console.log("Selected items:", selectedItems);
+
+  const renderKeywordsTags = () => {
+    const tags = keywords.slice(0, 3);
+    return tags.map((tag, index) => (
+      <View key={index} style={styles.tagStyle}>
+        <Text style={styles.keywordTagStyle}>{tag.trim()}</Text>
+      </View>
+    ));
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fafafc' }}>
@@ -397,13 +420,37 @@ const GenerateScreen = () => {
               {MOOD.map((item) => renderItem({ item }))}
             </View>
           </View>
+          
+          <Separator />
+          <View>
+            <Text style={styles.rowTitle}>Custom Keywords</Text>
+            <View style={styles.customInputContainer}>
+              <TextInput
+                style={styles.customInputField}
+                placeholder="Write keywords for your activity"
+                onChangeText={setKeywordValue}
+                value={keywordValue}
+              />
+              <TouchableOpacity 
+                onPress={handleCustomKeyword}
+                style={[styles.addButton, styles.dropShadow]}
+              >
+                <Text style={[styles.addButtonText]}>
+                  Add
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.tagContainer}>
+              {renderKeywordsTags(keywords)}
+            </View>
+          </View>
         </View>
       </ScrollView>
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           onPress={navigateToActivityScreen}
-          style={[styles.generateButton,]}
+          style={[styles.generateButton, styles.dropShadow]}
         >
           <Text style={[styles.generateButtonText]}>
             Generate Activity
@@ -424,6 +471,14 @@ const styles = StyleSheet.create({
   },
   touchable: {
     margin: buttonMargin,
+  },
+  tagContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginTop: 10,
+    marginLeft: 10,
+    maxWidth: '70%',
   },
   buttonContainer: {
     padding: 10, 
@@ -453,26 +508,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderRadius: buttonSize / 3,
   },
-  innerShadow: {
+  dropShadowPressed: {
     shadowOffset: {
         width: 0,
-        height: 3,
+        height: 1,
     },
     shadowOpacity: 0.25,
     shadowRadius: 2,
-    elevation: 4,
+    elevation: 4
   },
   dropShadow: {
     shadowOffset: {
         width: 0,
-        height: 3,
+        height: 4
     },
     shadowOpacity: 0.25,
     shadowRadius: 2,
-    elevation: 4,
+    elevation: 4
   },
   buttonParticipant: {
     width: buttonSize * 0.8,
@@ -488,6 +543,53 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     fontFamily: 'Montserrat-SemiBold',
+  },
+  customInputContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 5, 
+    alignItems: 'left',
+  },
+  customInputField: {
+    backgroundColor: "#fff",
+    borderWidth: 0.4,
+    borderColor: "#292D32",
+    borderRadius: 15,
+    padding: 10,
+    height: 46,
+    minWidth: '70%'
+  },
+  addButtonText: {
+    flexDirection: 'row',
+    color: "#404040",
+    textAlign: 'center',
+    fontFamily: 'Montserrat-Regular',
+    fontSize: 14,
+  },
+  addButton: {
+    backgroundColor: "#EAEAEA",
+    borderRadius: 15,
+    marginLeft: 16,
+    justifyContent: 'center',
+    height: 46,
+    minWidth: '18%'
+  },
+  keywordTagStyle: {
+    fontSize: 10,
+    fontFamily: 'Montserrat-Regular',
+    color: '#1A1A1A',
+    borderColor: '#D9D9D9',
+    backgroundColor: '#D9D9D9',
+    marginRight: 6,
+    paddingHorizontal: 5,
+    borderRadius: 3,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  keywordTagText: {
+    fontSize: 10,
+    fontFamily: 'Montserrat-Regular',
+    color: '#1A1A1A'
   },
   image: {
     width: buttonSize * 0.6,
