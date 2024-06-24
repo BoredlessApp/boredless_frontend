@@ -145,15 +145,37 @@ def generate_id(location, mood, participants, timeOfDay, typeOfActivity):
     sessionID = hashlib.sha256(prompt_string.encode('utf-8')).hexdigest()
     return sessionID
 
-async def generate_activity(sessionID, location, mood, participants, timeOfDay, typeOfActivity):
-    system_prompt = f"""
-        Utilizing your extensive knowledge and creativity, develop a distinctive and imaginative activity based on {typeOfActivity}. 
-        This activity should be perfectly suited for {participants} participant(s) in a friends relationship. 
+async def generate_activity(sessionID, location, mood, participants, timeOfDay, typeOfActivity, generate_type="general"):
+    match generate_type:
+        case "general":
+            base_prompt = f"""Utilizing your extensive knowledge and creativity, develop a distinctive and imaginative activity based on {typeOfActivity}. 
+        This activity should be perfectly suited for {participants} participant(s) in a relationship. 
         Strive for an experience that is not just in harmony with a {mood} mood but also stands out as memorable and unique. 
         Consider integrating inventive ideas or elements that diverge from the norm, ensuring it is achievable within a [Budget] budget. 
         The activity will take place in {location} during {timeOfDay}, presenting a chance to craft creative scenarios that enrich the theme. 
         Your objective is to propose an innovative and surprising concept for this activity, promoting delightful surprises and engaging experiences.
-        (Every activity generated should adhere to the format below exactly)
+        (Every activity generated should adhere to the format below exactly)"""
+
+        case "explorer":
+            base_prompt = f""" """
+
+        case "romantic":
+            base_prompt = f""" """
+
+        case "creator":
+            base_prompt = f""" """
+
+        case "nightowl":
+            base_prompt = f""" """
+
+        case "gamemaster":
+            base_prompt = f""" """
+
+        case "zenmaster":
+            base_prompt = f""" """
+
+    system_prompt = f"""
+        {base_prompt}
 
         FORMAT:
 

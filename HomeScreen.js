@@ -4,7 +4,6 @@ import axios from 'axios';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as Progress from 'react-native-progress';
 
-
 // Images
 const in_progress_expand_activity = require('./assets/in_progress_activity_expand.png');
 const completed_expand_activity = require('./assets/completed_activity_expand.png');
@@ -17,6 +16,8 @@ const HomeScreen = () => {
   const [inProgressActivities, setInProgressActivities] = useState([]);
   const [completedActivities, setCompletedActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const Separator = () => <View style={styles.separator} />;
 
   const fetchActivities = async () => {
     // setLoading(true);
@@ -48,7 +49,15 @@ const HomeScreen = () => {
     }, [])
   );
 
+  const handleQuickPick = () => {
+    const promptObject = generatePrompt();
+    console.log("Navigating with prompt:", promptObject);
+    navigation.navigate('Activity', { prompt: promptObject });
+  };
+
   const renderInProgressTags = (tagsString) => {
+    if (tagsString === "any") return null;
+    
     const tags = tagsString.split(',').slice(0, 2);
     return tags.map((tag, index) => (
       <View key={index}>
@@ -58,16 +67,18 @@ const HomeScreen = () => {
   };
   
   const renderCompletedTags = (tagsString) => {
+    if (tagsString === "any") return null;
+    
     const tags = tagsString.split(',').slice(0, 2);
     return tags.map((tag, index) => (
       <View key={index}>
         <Text style={styles.completedTagStyle}>{tag.trim()}</Text>
       </View>
     ));
-  }; 
+  };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fafafc'}}>
+    <SafeAreaView style={{flex: 1, backgroundColor: '#ffff'}}>
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#000" />
@@ -75,11 +86,10 @@ const HomeScreen = () => {
         </View>
       ) : (
         <ScrollView
-          style={styles.container}
           showsVerticalScrollIndicator={false}
         >
           <TouchableOpacity onPress={() => navigation.navigate('Generate')}>
-            <View style={styles.startActivityContainer}>
+            <View style={[styles.startActivityContainer, styles.dropShadow]}>
               <View>
                 <Text style={{ fontFamily: 'Montserrat-SemiBold', color: '#FBFBFB', fontSize: 18, marginBottom: 8}}>Start Activity</Text>
                 <Text style={{ fontFamily: 'Montserrat-Regular', color: '#FBFBFB', fontSize: 13,  width: '80%'}}>Tap to Begin Your Next Memorable Adventure!</Text>
@@ -91,20 +101,21 @@ const HomeScreen = () => {
           </TouchableOpacity>
 
           {/* In Progress Section */}
-          <View style={styles.collapsedActivityContainer}>
-            <Text style={styles.sectionTitle}>In Progress</Text>
+          <View style={[styles.container, styles.collapsedActivityContainer]}>
+            <Text style={[styles.sectionTitle]}>In Progress</Text>
             <TouchableOpacity onPress={() => navigateToExpandSavedScreen(true)}>
               <Image source={expand_arrow} style={styles.arrowIcon} />
             </TouchableOpacity>
           </View>
-          <View style={styles.separator} />
+          <Separator />
 
-          <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} style={styles.horizontalScrollView}>
+          
             {inProgressActivities.length > 0 ? (
               inProgressActivities.slice(0, 3).map((activity, index) => (
-                <View key={index} style={styles.inProgressActivityContainer}>
-                  <View style={{ flex: 1, }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
+                <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} style={[styles.horizontalScrollView]} key={activity.savedActivityID} >
+                <View style={[styles.inProgressActivityContainer, styles.dropShadow]}>
+                  <View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Text style={styles.inProgressTagTitle}>{activity.title}</Text>
                     </View>
 
@@ -122,136 +133,96 @@ const HomeScreen = () => {
                         borderWidth={0}
                         height={4}
                         borderRadius={0}
-                        marginVertical={5}
+                        marginVertical={10}
                       />
                     </View>
 
                     <View style={styles.tagContainer}>
                       {renderInProgressTags(activity.typeOfActivity)}
-                      <Text style={styles.inProgressTagStyle}>{activity.location}</Text>
+                      {renderInProgressTags(activity.location)}
                     </View>
-                    <View style={styles.tagContainer}>
+                    {/* <View style={styles.tagContainer}>
                       {renderInProgressTags(activity.mood)}
-                      <Text style={styles.inProgressTagStyle}>{activity.timeOfDay}</Text>
-                    </View>
+                      {renderInProgressTags(activity.timeOfDay)}
+                    </View> */}
                   </View>
                   <TouchableOpacity onPress={() => navigateToActivityScreen(activity.sessionID, activity.savedActivityID)}>
                     <Image source={in_progress_expand_activity} style={styles.expandIcon} />
                   </TouchableOpacity>
                 </View>
+                </ScrollView>
               ))
             ) : (
-              <Text style={styles.emptySectionText}>There are no in Progress Activities</Text>
+              <View style={[styles.noInProgressActivityContainer, styles.dropShadow]}>
+                  <View style={{ flex: 1, justifyContent: 'center' }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
+                          <Text style={styles.inProgressTagTitle}>There are no In Progress Activities</Text>
+                      </View>
+                  </View>
+              </View>
             )}
-          </ScrollView>
 
-          {/* For you Section */}
-          <View style={styles.collapsedActivityContainer}>
+
+          {/* Quick Picks Section */}
+          <View style={[styles.collapsedActivityContainer, styles.container]}>
             <Text style={styles.sectionTitle}>Quick Picks</Text>
             <TouchableOpacity onPress={() => navigateToExpandSavedScreen(true)}>
               <Image source={expand_arrow} style={styles.arrowIcon} />
             </TouchableOpacity>
           </View>
-          <View style={styles.separator} />
+          <Separator/>
 
           <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} style={styles.horizontalScrollView}>
-                <View style={styles.recommended1ActivityContainer}>
-                  <View style={{ flex: 1, }}>
+                <TouchableOpacity onPress={() => handleQuickPick()} style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#cdbba4'}]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
-                      <Text style={styles.recommendedTagTitle}>Adventurer 🏔️</Text>
+                      <Text style={styles.recommendedTagTitle}>Explorer 🏔️</Text>
                     </View>
-                  </View>
-                </View>
-                <View style={styles.recommended2ActivityContainer}>
-                  <View style={{ flex: 1, }}>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#f3c4cf'}]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
                       <Text style={styles.recommendedTagTitle}>Romantic 💞</Text>
                     </View>
-                  </View>
-                </View>
-                <View style={styles.recommended3ActivityContainer}>
-                  <View style={{ flex: 1, }}>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#FFD280'}]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
-                      <Text style={styles.recommendedTagTitle}>Picasso 🎨</Text>
+                      <Text style={styles.recommendedTagTitle}>Creator 🎨</Text>
                     </View>
-                  </View>
-                </View>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#AFE1AF'}]}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
+                      <Text style={styles.recommendedTagTitle}>Nightowl 🦉</Text>
+                    </View>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#AFC0F2'}]}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
+                      <Text style={styles.recommendedTagTitle}>Gamemaster 👾</Text>
+                    </View>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#fc9e93'}]}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
+                      <Text style={styles.recommendedTagTitle}>Zenmaster 🧘🏻‍♀️</Text>
+                    </View>
+                </TouchableOpacity>
           </ScrollView>
 
-          {/* Trending Section */}
-          {/* <View style={styles.collapsedActivityContainer}>
-            <Text style={styles.sectionTitle}>Trending Activities</Text>
-            <TouchableOpacity onPress={() => navigateToExpandSavedScreen(true)}>
-              <Image source={expand_arrow} style={styles.arrowIcon} />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.separator} />
-
-          <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} style={styles.horizontalScrollView}>
-            {inProgressActivities.length > 0 ? (
-              inProgressActivities.slice(0, 3).map((activity, index) => (
-                <View key={index} style={styles.inProgressActivityContainer}>
-                  <View style={{ flex: 1, }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
-                      <Text style={styles.inProgressTagTitle}>{activity.title}</Text>
-                    </View> */}
-
-                    {/* Progress Bar */}
-                    {/* <View>
-                      <Progress.Bar
-                        style={styles.progressBar}
-                        progress={
-                          ((Object.values(activity.materialsChecked || {}).filter(value => value).length) +
-                            (Object.values(activity.instructionsChecked || {}).filter(value => value).length)) / totalChecks
-                        }
-                        width={145}
-                        color={'#3B3B3B'}
-                        unfilledColor={'#A0A0A0'}
-                        borderWidth={0}
-                        height={4}
-                        borderRadius={0}
-                        marginVertical={5}
-                      />
-                    </View>
-
-                    <View style={styles.tagContainer}>
-                      {renderInProgressTags(activity.typeOfActivity)}
-                      <Text style={styles.inProgressTagStyle}>{activity.location}</Text>
-                    </View>
-                    <View style={styles.tagContainer}>
-                      {renderInProgressTags(activity.mood)}
-                      <Text style={styles.inProgressTagStyle}>{activity.timeOfDay}</Text>
-                    </View>
-                  </View>
-                  <TouchableOpacity onPress={() => navigateToActivityScreen(activity.sessionID, activity.savedActivityID)}>
-                    <Image source={in_progress_expand_activity} style={styles.expandIcon} />
-                  </TouchableOpacity>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.emptySectionText}>There are no in Progress Activities</Text>
-            )}
-          </ScrollView> */}
-
           {/* Completed Section */}
-          <View style={styles.collapsedActivityContainer}>
+          <View style={[styles.container, styles.collapsedActivityContainer]}>
             <Text style={styles.sectionTitle}>Completed</Text>
             <TouchableOpacity onPress={() => navigateToExpandSavedScreen(false)}>
-              <Image source={expand_arrow} style={styles.arrowIcon} />
+              <Image source={expand_arrow} style={styles.arrowIcon}/>
             </TouchableOpacity>
           </View>
-          <View style={styles.separator} />
+          <Separator/>
 
-          <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} style={styles.horizontalScrollView}>
+          
             {completedActivities.length > 0 ? (
               completedActivities.slice(0, 3).map((activity, index) => (
-                <View key={index} style={styles.completedActivityContainer}>
+              <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} style={styles.horizontalScrollView} key={activity.savedActivityID}>
+                <View style={[styles.container, styles.completedActivityContainer, styles.dropShadow]}>
                   <View style={{ flex: 1, justifyContent: 'center' }}>
-
                     <View>
                       <Text style={styles.completedTagTitle}>{activity.title}</Text>
                     </View>
-
                     <View>
                       <Text style={styles.dateCompleted}>
                         {activity.dateCompleted}
@@ -260,23 +231,28 @@ const HomeScreen = () => {
 
                     <View style={styles.tagContainer}>
                       {renderCompletedTags(activity.typeOfActivity)}
-                      <Text style={styles.completedTagStyle}>{activity.location}</Text>
+                      {renderCompletedTags(activity.location)}
                     </View>
-                    <View style={styles.tagContainer}>
+                    {/* <View style={styles.tagContainer}>
                       {renderCompletedTags(activity.mood)}
-                      <Text style={styles.completedTagStyle}>{activity.timeOfDay}</Text>
-                    </View>
-
+                    </View> */}
                   </View>
                   <TouchableOpacity onPress={() => navigateToActivityScreen(activity.sessionID, activity.savedActivityID)}>
                     <Image source={completed_expand_activity} style={styles.expandIcon} />
                   </TouchableOpacity>
                 </View>
+              </ScrollView>
               ))
             ) : (
-              <Text style={styles.emptySectionText}>There are no Completed Activities</Text>
+              <View style={[styles.noCompletedActivityContainer, styles.dropShadow]}>
+                  <View style={{ flex: 1, justifyContent: 'center' }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
+                          <Text style={styles.completedTagTitle}>There are no Completed Activities</Text>
+                      </View>
+                  </View>
+              </View>
             )}
-          </ScrollView>
+          
         </ScrollView>
       )}
     </SafeAreaView>
@@ -285,25 +261,42 @@ const HomeScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     marginHorizontal: 15,
+  },
+  dropShadowPressed: {
+    shadowOffset: {
+        width: 0,
+        height: 1,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
+    elevation: 4
+  },
+  dropShadow: {
+    shadowOffset: {
+        width: 0,
+        height: 4
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
+    elevation: 4
   },
   collapsedActivityContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 10,
-      },
+  },
   sectionTitle: {
     fontSize: 18,
     fontFamily: 'Montserrat-SemiBold',
     color: '#1A1A1A',
   },
   separator: {
-    height: 1.3,
-    width: "100%",
-    backgroundColor: "#DFDEDE",
-    marginVertical: 15,
+    height: 1,
+    backgroundColor: '#ccc',
+    marginHorizontal: 7.5,
+    marginVertical: 12,
   },
   arrowIcon: {
     width: 16,
@@ -314,15 +307,13 @@ const styles = StyleSheet.create({
     height: 18,
   },
   inProgressActivityContainer: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
-    height: 125,
+    backgroundColor: '#fafafc',
+    height: 90,
     width: 250,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginRight: 15,
+    marginHorizontal: 7.5,
     marginBottom: 15,
     padding: 12,
     borderRadius: 12,
@@ -344,28 +335,42 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
   },
+  noInProgressActivityContainer: {
+    backgroundColor: '#fafafc',
+    height: 90,
+    marginHorizontal: 7.5,
+    marginBottom: 15,
+    padding: 12,
+    borderRadius: 12,
+  },
   completedTagStyle: {
     fontSize: 10,
     fontFamily: 'Montserrat-Regular',
     color: '#1A1A1A',
-    borderColor: '#FBFBFB',
     backgroundColor: '#FBFBFB',
     marginRight: 6,
     paddingHorizontal: 5,
+    borderColor: '#FBFBFB',
     borderRadius: 3,
     borderWidth: 1,
     overflow: 'hidden',
   },
   completedActivityContainer: {
     backgroundColor: '#373737',
-    borderWidth: 1,
-    borderColor: '#373737',
-    height: 125,
+    height: 90,
     width: 250,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginRight: 15,
+    marginHorizontal: 7.5,
+    marginBottom: 15,
+    padding: 12,
+    borderRadius: 12,
+  },
+  noCompletedActivityContainer: {
+    backgroundColor: '#373737',
+    height: 90,
+    marginHorizontal: 7.5,
     marginBottom: 15,
     padding: 12,
     borderRadius: 12,
@@ -397,13 +402,12 @@ const styles = StyleSheet.create({
   },
   startActivityContainer: {
     backgroundColor: '#373737',
-    borderWidth: 1,
-    borderColor: '#373737',
     height: 125,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 15,
+    marginVertical: 10,
+    marginHorizontal: 7.5,
     padding: 12,
     borderRadius: 12,
   },
@@ -417,44 +421,13 @@ const styles = StyleSheet.create({
   },
 
   //Recommended Section
-  recommended1ActivityContainer: {
-    backgroundColor: '#88b984',
-    borderWidth: 1,
-    borderColor: '#FFFFFF',
+  quickPickContainer: {
     height: 40,
     width: 'auto',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginRight: 10,
-    marginBottom: 1,
-    padding: 10,
-    borderRadius: 12,
-  },
-  recommended2ActivityContainer: {
-    backgroundColor: '#FF8FAB',
-    borderWidth: 1,
-    borderColor: '#FFFFFF',
-    height: 40,
-    width: 'auto',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginRight: 10,
-    marginBottom: 15,
-    padding: 10,
-    borderRadius: 12,
-  },
-  recommended3ActivityContainer: {
-    backgroundColor: '#C39B77',
-    borderWidth: 1,
-    borderColor: '#FFFFFF',
-    height: 40,
-    width: 'auto',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginRight: 10,
+    marginHorizontal: 7.5,
     marginBottom: 15,
     padding: 10,
     borderRadius: 12,

@@ -42,6 +42,8 @@ const SavedScreen = () => {
     }
 
     const renderTags = (tagsString, style) => {
+        if (tagsString === "any") return null;
+
         const tags = tagsString.split(',').slice(0, 2);
         return tags.map((tag, index) => (
           <View key={index}>
@@ -56,7 +58,7 @@ const SavedScreen = () => {
             return () => { };
         }, [])
     );
-
+    
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#fafafc' }}>
             {loading ? (
@@ -106,7 +108,7 @@ const SavedScreen = () => {
 
                                         <View style={styles.tagContainer}>
                                             {renderTags(activity.typeOfActivity, styles.inProgressTagStyle)}
-                                            <Text style={styles.inProgressTagStyle}>{activity.location}</Text>
+                                            {renderTags(activity.location, styles.inProgressTagStyle)}
                                             {renderTags(activity.mood, styles.inProgressTagStyle)}
                                         </View>
                                     </View>

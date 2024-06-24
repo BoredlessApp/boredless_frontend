@@ -20,49 +20,49 @@ const windowHeight = Dimensions.get('window').height;
 
 const TYPEOFACTIVITY = [
   {
-    id: "101",
+    id: "100",
     img: require("./assets/nature_icon.png"),
     title: "Art",
     dataType: "activity",
     selected: false,
   },
   {
-    id: "102",
+    id: "101",
     img: require("./assets/nature_icon.png"),
     title: "DIY",
     dataType: "activity",
     selected: false,
   },
   {
-    id: "103",
+    id: "102",
     img: require("./assets/nature_icon.png"),
     title: "Exploring",
     dataType: "activity",
     selected: false,
   },
   {
-    id: "104",
+    id: "103",
     img: require("./assets/nature_icon.png"),
     title: "Game",
     dataType: "activity",
     selected: false,
   },
   {
-    id: "105",
+    id: "104",
     img: require("./assets/nature_icon.png"),
     title: "Date",
     dataType: "activity",
     selected: false,
   },
   {
-    id: "106",
+    id: "105",
     img: require("./assets/nature_icon.png"),
     title: "Sports",
     dataType: "activity",
     selected: false,
   },
   {
-    id: "107",
+    id: "106",
     img: require("./assets/nature_icon.png"),
     title: "Drinking",
     dataType: "activity",
@@ -140,7 +140,7 @@ const PARTICIPANTS = [
   {
     id: "305",
     img: require("./assets/nature_icon.png"),
-    title: "6",
+    title: "6+",
     dataType: "participants",
     selected: false,
   },
@@ -157,21 +157,28 @@ const LOCATION = [
   {
     id: "401",
     img: require("./assets/nature_icon.png"),
-    title: "Nature",
+    title: "City",
     dataType: "location",
     selected: false,
   },
   {
     id: "402",
     img: require("./assets/nature_icon.png"),
-    title: "City",
+    title: "Indoors",
     dataType: "location",
     selected: false,
   },
   {
     id: "403",
     img: require("./assets/nature_icon.png"),
-    title: "Party",
+    title: "Outdoors",
+    dataType: "location",
+    selected: false,
+  },
+  {
+    id: "404",
+    img: require("./assets/nature_icon.png"),
+    title: "Virtual",
     dataType: "location",
     selected: false,
   },
@@ -188,31 +195,98 @@ const MOOD = [
   {
     id: "501",
     img: require("./assets/nature_icon.png"),
-    title: "Calm",
+    title: "Relaxed",
     dataType: "mood",
     selected: false,
   },
   {
     id: "502",
     img: require("./assets/nature_icon.png"),
-    title: "Curious",
+    title: "Playful",
     dataType: "mood",
     selected: false,
   },
   {
     id: "503",
     img: require("./assets/nature_icon.png"),
-    title: "Brave",
+    title: "Inspired",
     dataType: "mood",
     selected: false,
   },
   {
     id: "504",
     img: require("./assets/nature_icon.png"),
+    title: "Mysterious",
+    dataType: "mood",
+    selected: false,
+  },
+  {
+    id: "505",
+    img: require("./assets/nature_icon.png"),
     title: "Romantic",
     dataType: "mood",
     selected: false,
   },
+  {
+    id: "506",
+    img: require("./assets/nature_icon.png"),
+    title: "Nostalgic",
+    dataType: "mood",
+    selected: false
+  },
+];
+const BUDGET = [
+  {
+    id: "600",
+    img: require("./assets/nature_icon.png"),
+    title: "$",
+    dataType: "budget",
+    selected: false,
+  },
+  {
+    id: "601",
+    img: require("./assets/nature_icon.png"),
+    title: "$$",
+    dataType: "budget",
+    selected: false,
+  },
+  {
+    id: "602",
+    img: require("./assets/nature_icon.png"),
+    title: "$$$",
+    dataType: "budget",
+    selected: false,
+  }
+];
+const RELATIONTYPE = [
+  {
+    id: "700",
+    img: require("./assets/nature_icon.png"),
+    title: "Friends",
+    dataType: "relation-type",
+    selected: false,
+  },
+  {
+    id: "701",
+    img: require("./assets/nature_icon.png"),
+    title: "Family",
+    dataType: "relation-type",
+    selected: false,
+  },
+  {
+    id: "702",
+    img: require("./assets/nature_icon.png"),
+    title: "Colleagues",
+    dataType: "relation-type",
+    selected: false,
+  },
+  {
+    id: "703",
+    img: require("./assets/nature_icon.png"),
+    title: "Romantic",
+    dataType: "relation-type",
+    selected: false,
+  }
 ];
 
 const Separator = () => <View style={styles.separator} />;
@@ -255,7 +329,7 @@ const GenerateScreen = () => {
     ...PARTICIPANTS,
     ...LOCATION,
     ...MOOD,
-  ];
+      ];
   const navigation = useNavigation();
 
   const dataHashMap = combinedData.reduce((acc, item) => {
@@ -296,7 +370,7 @@ const GenerateScreen = () => {
         handleSingleSelection(PARTICIPANTS);
       } else if (updatedItem.dataType === "location") {
         handleSingleSelection(LOCATION);
-      }
+            }
 
       return updatedState;
     });
@@ -323,7 +397,7 @@ const GenerateScreen = () => {
     const timeOfDay = selectedItems.find(item => item.dataType === "time-of-day")?.title || "any";
     const participants = selectedItems.find(item => item.dataType === "participants")?.title || "any";
     const location = selectedItems.find(item => item.dataType === "location")?.title || "any";
-    return {
+        return {
       typeOfActivity: activities || "any",
       timeOfDay,
       participants,
@@ -420,7 +494,7 @@ const GenerateScreen = () => {
               {MOOD.map((item) => renderItem({ item }))}
             </View>
           </View>
-          
+
           <Separator />
           <View>
             <Text style={styles.rowTitle}>Custom Keywords</Text>
