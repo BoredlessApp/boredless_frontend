@@ -69,6 +69,7 @@ def init_db():
         participants TEXT,
         timeOfDay TEXT,
         typeOfActivity TEXT,
+        keywords TEXT,
         materialsChecked TEXT,
         instructionsChecked TEXT,
         isCompleted INTEGER DEFAULT FALSE,
@@ -95,6 +96,7 @@ class GenerateRequest(BaseModel):
     participants: str
     timeOfDay: str
     typeOfActivity: str
+    keywords: str
 
 class RegenerateRequest(BaseModel):
     sessionID: str
@@ -103,6 +105,7 @@ class RegenerateRequest(BaseModel):
     participants: str
     timeOfDay: str
     typeOfActivity: str
+    keywords: str
 
 class SaveActivityRequest(BaseModel):
     sessionID: str
@@ -117,6 +120,7 @@ class SaveActivityRequest(BaseModel):
     participants: str
     timeOfDay: str
     typeOfActivity: str
+    keywords: str = ""
     materialsChecked: List[bool] = Field(default=[])
     instructionsChecked: List[bool] = Field(default=[])
     isCompleted: bool
@@ -136,16 +140,16 @@ os.environ['STABILITY_KEY'] = 'sk-qKCZwEAZD0DEkIChICCfAAPgqQmNLMdOc1wPnmWapkIUsu
 url = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image"
 
 
-def generate_id(location, mood, participants, timeOfDay, typeOfActivity):
+def generate_id(location, mood, participants, timeOfDay, typeOfActivity, keywords):
     """
     Generate a session ID based on the hash of the prompt components.
     """
-    prompt_string = f"{location}-{mood}-{participants}-{timeOfDay}-{typeOfActivity}"
+    prompt_string = f"{location}-{mood}-{participants}-{timeOfDay}-{typeOfActivity}-{keywords}"
     # Use SHA-256 hash function to generate a unique identifier for the given prompt
     sessionID = hashlib.sha256(prompt_string.encode('utf-8')).hexdigest()
     return sessionID
 
-async def generate_activity(sessionID, location, mood, participants, timeOfDay, typeOfActivity, generate_type="general"):
+async def generate_activity(sessionID, location, mood, participants, timeOfDay, typeOfActivity, keywords, generate_type="general"):
     match generate_type:
         case "general":
             base_prompt = f"""Utilizing your extensive knowledge and creativity, develop a distinctive and imaginative activity based on {typeOfActivity}. 
@@ -232,15 +236,16 @@ async def generate_activity(sessionID, location, mood, participants, timeOfDay, 
 
 @app.post("/generate")
 async def generate(data: GenerateRequest):
-    sessionID = generate_id(data.location, data.mood, data.participants, data.timeOfDay, data.typeOfActivity)
-    print(sessionID)
+    sessionID = generate_id(data.location, data.mood, data.participants, data.timeOfDay, data.typeOfActivity, data.keywords)
+    # print(sessionID)
     generated_text = await generate_activity(
         sessionID=sessionID,
         location=data.location, 
         mood=data.mood, 
         participants=data.participants, 
         timeOfDay=data.timeOfDay, 
-        typeOfActivity=data.typeOfActivity
+        typeOfActivity=data.typeOfActivity,
+        keywords=data.keywords
     )
     return {'response': generated_text, 'sessionID': sessionID}
 
@@ -252,14 +257,14 @@ async def regenerate(data: RegenerateRequest):
         mood=data.mood, 
         participants=data.participants, 
         timeOfDay=data.timeOfDay, 
-        typeOfActivity=data.typeOfActivity
+        typeOfActivity=data.typeOfActivity,
+        keywords=data.keywords
     )
     return {'response': generated_text}
 
 @app.post("/generate_image")
 async def generate_image(data: ImageRequest):
-    print("Received data:", jsonable_encoder(data))
-    
+    # print("Received data:", jsonable_encoder(data))
     max_attempts = 3
     attempt = 0
 
@@ -322,12 +327,12 @@ async def save_activity(data: SaveActivityRequest):
         await db.execute("""
             INSERT INTO saved_activities (
                 sessionID, activityImage, title, introduction, materials, instructions,
-                location, mood, participants, timeOfDay, typeOfActivity,
+                location, mood, participants, timeOfDay, typeOfActivity, keywords,
                 materialsChecked, instructionsChecked, isCompleted, dateCompleted, dateModified
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             data.sessionID, data.activityImage, data.title, data.introduction, data.materials, data.instructions,
-            data.location, data.mood, data.participants, data.timeOfDay, data.typeOfActivity, 
+            data.location, data.mood, data.participants, data.timeOfDay, data.typeOfActivity, data.keywords,
             materialsChecked, instructionsChecked, data.isCompleted, dateCompleted, dateModified
         ))
         await db.commit()
@@ -348,8 +353,8 @@ async def get_activity(sessionID: str, savedActivityID: int):
         """, (sessionID, savedActivityID ))
         activity = await cursor.fetchone()
         if activity:
-            materialsChecked = json.loads(activity[12])
-            instructionsChecked = json.loads(activity[13])
+            materialsChecked = json.loads(activity[13])
+            instructionsChecked = json.loads(activity[14])
             return {
                 "sessionID": activity[1],
                 "activityImage": activity[2],
@@ -362,9 +367,10 @@ async def get_activity(sessionID: str, savedActivityID: int):
                 "participants": activity[9],
                 "timeOfDay": activity[10],
                 "typeOfActivity": activity[11],
+                "keywords": activity[12],
                 "materialsChecked": materialsChecked,
                 "instructionsChecked": instructionsChecked,
-                "isCompleted": bool(activity[14]),
+                "isCompleted": bool(activity[15]),
             }
         else:
             raise HTTPException(status_code=404, detail="Activity not found")
@@ -403,8 +409,8 @@ async def get_saved_activities():
         rows = await cursor.fetchall()
         activities = []
         for row in rows:
-            materialsChecked = json.loads(row[12])
-            instructionsChecked = json.loads(row[13])
+            materialsChecked = json.loads(row[13])
+            instructionsChecked = json.loads(row[14])
             activities.append({
                 "savedActivityID": row[0],
                 "sessionID": row[1],
@@ -418,11 +424,12 @@ async def get_saved_activities():
                 "participants": row[9],
                 "timeOfDay": row[10],
                 "typeOfActivity": row[11],
+                "keywords": row[12],
                 "materialsChecked": materialsChecked,
                 "instructionsChecked": instructionsChecked,
-                "isCompleted": bool(row[14]),
-                "dateCompleted": row[15],
-                "dateModified": row[16]
+                "isCompleted": bool(row[15]),
+                "dateCompleted": row[16],
+                "dateModified": row[17]
             })
     return activities
 

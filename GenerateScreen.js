@@ -377,11 +377,14 @@ const GenerateScreen = () => {
   };
 
   const handleCustomKeyword = () => {
-    if (keywordValue) {
-      setKeywords((prevKeywords) => [keywordValue, ...prevKeywords]);
+    if (keywordValue && keywordValue.trim()) {
+      setKeywords((prevKeywords) => [keywordValue.trim(), ...prevKeywords]);
       setKeywordValue("");
+    } else {
+      // Optionally add feedback to user about invalid input
+      console.log("Invalid keyword input");
     }
-};
+  };
 
   const generatePrompt = () => {
     const activities = selectedItems
@@ -397,13 +400,14 @@ const GenerateScreen = () => {
     const timeOfDay = selectedItems.find(item => item.dataType === "time-of-day")?.title || "any";
     const participants = selectedItems.find(item => item.dataType === "participants")?.title || "any";
     const location = selectedItems.find(item => item.dataType === "location")?.title || "any";
-        return {
+
+    return {
       typeOfActivity: activities || "any",
       timeOfDay,
       participants,
       location,
       mood: moods || "any",
-      keywords: keywords.length > 0 ? keywords.join(", ") : "any"
+      keywords: keywords.join(", ") 
     };
   };
 
@@ -429,7 +433,7 @@ const GenerateScreen = () => {
       />
     );
   };
-  console.log("Selected items:", selectedItems);
+  console.log("Selected items:", selectedItems, "Keywords:", keywords);
 
   const renderKeywordsTags = () => {
     const tags = keywords.slice(0, 3);

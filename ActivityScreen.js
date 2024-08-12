@@ -250,6 +250,7 @@ const ActivityScreen = ({ route }) => {
             participants: prompt.participants,
             timeOfDay: prompt.timeOfDay,
             typeOfActivity: prompt.typeOfActivity,
+            keywords: prompt.keywords || "",
             isCompleted: isActivityCompleted,
         };
     

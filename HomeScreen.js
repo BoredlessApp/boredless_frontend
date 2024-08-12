@@ -35,12 +35,28 @@ const HomeScreen = () => {
     }
   };
 
+  const quickPickPrompts = () => {
+    return {
+      typeOfActivity: activities || "any",
+      timeOfDay,
+      participants,
+      location,
+      mood: moods || "any",
+      keywords: keywords.length > 0 ? keywords.join(", ") : "any",
+    };
+  };
+
   const navigateToActivityScreen = (sessionID, savedActivityID) => {
     navigation.navigate('ExpandActivity', { sessionID, savedActivityID });
   };
   const navigateToExpandSavedScreen = (section) => {
     navigation.navigate('ExpandSaved', { section });
   }
+  const handleQuickPick = () => {
+    const promptObject = quickPickPrompts();
+    console.log("Navigating with prompt:", promptObject);
+    navigation.navigate('Activity', { prompt: promptObject });
+  };
 
   useFocusEffect(
     React.useCallback(() => {
@@ -48,12 +64,6 @@ const HomeScreen = () => {
       return () => { };
     }, [])
   );
-
-  const handleQuickPick = () => {
-    const promptObject = generatePrompt();
-    console.log("Navigating with prompt:", promptObject);
-    navigation.navigate('Activity', { prompt: promptObject });
-  };
 
   const renderInProgressTags = (tagsString) => {
     if (tagsString === "any") return null;
