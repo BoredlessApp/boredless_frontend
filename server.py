@@ -19,6 +19,7 @@ from aiocache import Cache
 import json
 from datetime import datetime
 
+
 app = FastAPI()
 cache = Cache(Cache.MEMORY)
 
@@ -70,6 +71,7 @@ def init_db():
         timeOfDay TEXT,
         typeOfActivity TEXT,
         keywords TEXT,
+        generateType TEXT,
         materialsChecked TEXT,
         instructionsChecked TEXT,
         isCompleted INTEGER DEFAULT FALSE,
@@ -97,6 +99,7 @@ class GenerateRequest(BaseModel):
     timeOfDay: str
     typeOfActivity: str
     keywords: str
+    generateType: str = "general"
 
 class RegenerateRequest(BaseModel):
     sessionID: str
@@ -106,6 +109,7 @@ class RegenerateRequest(BaseModel):
     timeOfDay: str
     typeOfActivity: str
     keywords: str
+    generateType: str = "general"
 
 class SaveActivityRequest(BaseModel):
     sessionID: str
@@ -121,6 +125,7 @@ class SaveActivityRequest(BaseModel):
     timeOfDay: str
     typeOfActivity: str
     keywords: str = ""
+    generateType: str = "general"
     materialsChecked: List[bool] = Field(default=[])
     instructionsChecked: List[bool] = Field(default=[])
     isCompleted: bool
@@ -140,46 +145,24 @@ os.environ['STABILITY_KEY'] = 'sk-qKCZwEAZD0DEkIChICCfAAPgqQmNLMdOc1wPnmWapkIUsu
 url = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image"
 
 
-def generate_id(location, mood, participants, timeOfDay, typeOfActivity, keywords):
+def generate_id(location, mood, participants, timeOfDay, typeOfActivity, keywords, generateType):
     """
     Generate a session ID based on the hash of the prompt components.
     """
-    prompt_string = f"{location}-{mood}-{participants}-{timeOfDay}-{typeOfActivity}-{keywords}"
+    prompt_string = f"{location}-{mood}-{participants}-{timeOfDay}-{typeOfActivity}-{keywords}-{generateType}"
     # Use SHA-256 hash function to generate a unique identifier for the given prompt
     sessionID = hashlib.sha256(prompt_string.encode('utf-8')).hexdigest()
     return sessionID
 
-async def generate_activity(sessionID, location, mood, participants, timeOfDay, typeOfActivity, keywords, generate_type="general"):
-    match generate_type:
-        case "general":
-            base_prompt = f"""Utilizing your extensive knowledge and creativity, develop a distinctive and imaginative activity based on {typeOfActivity}. 
+async def generate_activity(sessionID, location, mood, participants, timeOfDay, typeOfActivity, keywords):
+    system_prompt = f"""
+        Utilizing your extensive knowledge and creativity, develop a distinctive and imaginative activity based on {typeOfActivity}. 
         This activity should be perfectly suited for {participants} participant(s) in a relationship. 
         Strive for an experience that is not just in harmony with a {mood} mood but also stands out as memorable and unique. 
         Consider integrating inventive ideas or elements that diverge from the norm, ensuring it is achievable within a [Budget] budget. 
         The activity will take place in {location} during {timeOfDay}, presenting a chance to craft creative scenarios that enrich the theme. 
         Your objective is to propose an innovative and surprising concept for this activity, promoting delightful surprises and engaging experiences.
-        (Every activity generated should adhere to the format below exactly)"""
-
-        case "explorer":
-            base_prompt = f""" """
-
-        case "romantic":
-            base_prompt = f""" """
-
-        case "creator":
-            base_prompt = f""" """
-
-        case "nightowl":
-            base_prompt = f""" """
-
-        case "gamemaster":
-            base_prompt = f""" """
-
-        case "zenmaster":
-            base_prompt = f""" """
-
-    system_prompt = f"""
-        {base_prompt}
+        (Every activity generated should adhere to the format below exactly)
 
         FORMAT:
 
@@ -219,7 +202,7 @@ async def generate_activity(sessionID, location, mood, participants, timeOfDay, 
         next_activity_id = max_activity_id + 1
 
         response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[{"role": "system", "content": system_prompt}],
             temperature=1,
             max_tokens=1024,
@@ -236,8 +219,7 @@ async def generate_activity(sessionID, location, mood, participants, timeOfDay, 
 
 @app.post("/generate")
 async def generate(data: GenerateRequest):
-    sessionID = generate_id(data.location, data.mood, data.participants, data.timeOfDay, data.typeOfActivity, data.keywords)
-    # print(sessionID)
+    sessionID = generate_id(data.location, data.mood, data.participants, data.timeOfDay, data.typeOfActivity, data.keywords, data.generateType)
     generated_text = await generate_activity(
         sessionID=sessionID,
         location=data.location, 
@@ -315,11 +297,9 @@ async def generate_image(data: ImageRequest):
 
 @app.post("/save_activity")
 async def save_activity(data: SaveActivityRequest):
-    print(data)
     materialsChecked = json.dumps(data.materialsChecked)
     instructionsChecked = json.dumps(data.instructionsChecked)
 
-    # Assuming isCompleted determines whether dateCompleted should be set
     dateCompleted = datetime.now().strftime("%Y-%m-%d") if data.isCompleted else None
     dateModified = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
@@ -328,12 +308,14 @@ async def save_activity(data: SaveActivityRequest):
             INSERT INTO saved_activities (
                 sessionID, activityImage, title, introduction, materials, instructions,
                 location, mood, participants, timeOfDay, typeOfActivity, keywords,
-                materialsChecked, instructionsChecked, isCompleted, dateCompleted, dateModified
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                materialsChecked, instructionsChecked, isCompleted, dateCompleted, dateModified,
+                generateType
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             data.sessionID, data.activityImage, data.title, data.introduction, data.materials, data.instructions,
             data.location, data.mood, data.participants, data.timeOfDay, data.typeOfActivity, data.keywords,
-            materialsChecked, instructionsChecked, data.isCompleted, dateCompleted, dateModified
+            materialsChecked, instructionsChecked, data.isCompleted, dateCompleted, dateModified,
+            data.generateType
         ))
         await db.commit()
     
@@ -353,8 +335,8 @@ async def get_activity(sessionID: str, savedActivityID: int):
         """, (sessionID, savedActivityID ))
         activity = await cursor.fetchone()
         if activity:
-            materialsChecked = json.loads(activity[13])
-            instructionsChecked = json.loads(activity[14])
+            materialsChecked = json.loads(activity[14])
+            instructionsChecked = json.loads(activity[15])
             return {
                 "sessionID": activity[1],
                 "activityImage": activity[2],
@@ -368,9 +350,10 @@ async def get_activity(sessionID: str, savedActivityID: int):
                 "timeOfDay": activity[10],
                 "typeOfActivity": activity[11],
                 "keywords": activity[12],
+                "generateType": activity[13],
                 "materialsChecked": materialsChecked,
                 "instructionsChecked": instructionsChecked,
-                "isCompleted": bool(activity[15]),
+                "isCompleted": bool(activity[16]),
             }
         else:
             raise HTTPException(status_code=404, detail="Activity not found")
@@ -409,8 +392,8 @@ async def get_saved_activities():
         rows = await cursor.fetchall()
         activities = []
         for row in rows:
-            materialsChecked = json.loads(row[13])
-            instructionsChecked = json.loads(row[14])
+            materialsChecked = json.loads(row[14])
+            instructionsChecked = json.loads(row[15])
             activities.append({
                 "savedActivityID": row[0],
                 "sessionID": row[1],
@@ -425,11 +408,12 @@ async def get_saved_activities():
                 "timeOfDay": row[10],
                 "typeOfActivity": row[11],
                 "keywords": row[12],
+                "generateType": row[13],
                 "materialsChecked": materialsChecked,
                 "instructionsChecked": instructionsChecked,
-                "isCompleted": bool(row[15]),
-                "dateCompleted": row[16],
-                "dateModified": row[17]
+                "isCompleted": bool(row[16]),
+                "dateCompleted": row[17],
+                "dateModified": row[18]
             })
     return activities
 

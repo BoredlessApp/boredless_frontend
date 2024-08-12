@@ -251,6 +251,7 @@ const ActivityScreen = ({ route }) => {
             timeOfDay: prompt.timeOfDay,
             typeOfActivity: prompt.typeOfActivity,
             keywords: prompt.keywords || "",
+            generateType: prompt.generateType || "general", 
             isCompleted: isActivityCompleted,
         };
     

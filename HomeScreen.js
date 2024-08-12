@@ -35,14 +35,81 @@ const HomeScreen = () => {
     }
   };
 
-  const quickPickPrompts = () => {
+  const generateQuickPickPrompt = (generateType) => {
+    // Default values
+    let typeOfActivity = "any";
+    let mood = "any";
+    let timeOfDay = "any";
+    let participants = "any";
+    let location = "any";
+    let keywords = [];
+  
+    switch (generateType) {
+      case "Explorer":
+        console.log("Explorer");
+        typeOfActivity = "Exploring,Hiking,Adventure";
+        mood = "Energetic,Curious";
+        location = "Outdoors,City";
+        keywords = ["discovery", "nature", "landmarks"];
+        break;
+  
+      case "Romantic":
+        console.log("Romantic");
+        typeOfActivity = "Date,Relaxation";
+        mood = "Romantic,Intimate";
+        timeOfDay = "Evening,Night";
+        participants = "2";
+        keywords = ["couple", "intimate", "memorable"];
+        break;
+  
+      case "Creator":
+        console.log("Creator");
+        typeOfActivity = "Art,DIY,Crafts";
+        mood = "Inspired,Creative";
+        location = "Home,Indoors";
+        keywords = ["artistic", "hands-on", "expressive"];
+        break;
+  
+      case "Nightowl":
+        console.log("Nightowl");
+        typeOfActivity = "Entertainment,Socializing";
+        mood = "Energetic,Mysterious";
+        timeOfDay = "Night";
+        location = "City,Indoors";
+        keywords = ["nightlife", "adventure", "urban"];
+        break;
+  
+      case "Gamemaster":
+        console.log("Gamemaster");
+        typeOfActivity = "Game,Puzzle,Challenge";
+        mood = "Playful,Competitive";
+        participants = "2,4,6+";
+        location = "Home,Indoors";
+        keywords = ["strategy", "fun", "interactive"];
+        break;
+  
+      case "Zenmaster":
+        console.log("Zenmaster");
+        typeOfActivity = "Relaxation,Meditation,Yoga";
+        mood = "Calm,Peaceful";
+        location = "Home,Outdoors";
+        keywords = ["mindfulness", "tranquility", "wellness"];
+        break;
+  
+      default:
+        console.log("General");
+        // For "general" or any unspecified type, we'll use the default "any" values
+        break;
+    }
+  
     return {
-      typeOfActivity: activities || "any",
+      typeOfActivity,
       timeOfDay,
       participants,
       location,
-      mood: moods || "any",
-      keywords: keywords.length > 0 ? keywords.join(", ") : "any",
+      mood,
+      keywords: keywords.join(", "),
+      generateType
     };
   };
 
@@ -52,8 +119,8 @@ const HomeScreen = () => {
   const navigateToExpandSavedScreen = (section) => {
     navigation.navigate('ExpandSaved', { section });
   }
-  const handleQuickPick = () => {
-    const promptObject = quickPickPrompts();
+  const handleQuickPick = (generate_type) => {
+    const promptObject = generateQuickPickPrompt(generate_type);
     console.log("Navigating with prompt:", promptObject);
     navigation.navigate('Activity', { prompt: promptObject });
   };
@@ -65,27 +132,16 @@ const HomeScreen = () => {
     }, [])
   );
 
-  const renderInProgressTags = (tagsString) => {
+  const renderTags = (tagsString, style) => {
     if (tagsString === "any") return null;
-    
-    const tags = tagsString.split(',').slice(0, 2);
+
+    const tags = tagsString.split(',').slice(0, 1);
     return tags.map((tag, index) => (
       <View key={index}>
-        <Text style={styles.inProgressTagStyle}>{tag.trim()}</Text>
+        <Text style={style}>{tag.trim()}</Text>
       </View>
     ));
-  };
-  
-  const renderCompletedTags = (tagsString) => {
-    if (tagsString === "any") return null;
-    
-    const tags = tagsString.split(',').slice(0, 2);
-    return tags.map((tag, index) => (
-      <View key={index}>
-        <Text style={styles.completedTagStyle}>{tag.trim()}</Text>
-      </View>
-    ));
-  };
+  };  
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: '#ffff'}}>
@@ -117,13 +173,12 @@ const HomeScreen = () => {
               <Image source={expand_arrow} style={styles.arrowIcon} />
             </TouchableOpacity>
           </View>
-          <Separator />
+          <View style={styles.separator} />
 
-          
+          <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
             {inProgressActivities.length > 0 ? (
               inProgressActivities.slice(0, 3).map((activity, index) => (
-                <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} style={[styles.horizontalScrollView]} key={activity.savedActivityID} >
-                <View style={[styles.inProgressActivityContainer, styles.dropShadow]}>
+                <View key={activity.savedActivityID} style={[styles.inProgressActivityContainer, styles.dropShadow]}>
                   <View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Text style={styles.inProgressTagTitle}>{activity.title}</Text>
@@ -148,29 +203,26 @@ const HomeScreen = () => {
                     </View>
 
                     <View style={styles.tagContainer}>
-                      {renderInProgressTags(activity.typeOfActivity)}
-                      {renderInProgressTags(activity.location)}
+                      {renderTags(activity.typeOfActivity, styles.inProgressTagStyle)}
+                      {renderTags(activity.location, styles.inProgressTagStyle)}
+                      {renderTags(activity.mood, styles.inProgressTagStyle)}
                     </View>
-                    {/* <View style={styles.tagContainer}>
-                      {renderInProgressTags(activity.mood)}
-                      {renderInProgressTags(activity.timeOfDay)}
-                    </View> */}
                   </View>
                   <TouchableOpacity onPress={() => navigateToActivityScreen(activity.sessionID, activity.savedActivityID)}>
                     <Image source={in_progress_expand_activity} style={styles.expandIcon} />
                   </TouchableOpacity>
                 </View>
-                </ScrollView>
               ))
             ) : (
               <View style={[styles.noInProgressActivityContainer, styles.dropShadow]}>
-                  <View style={{ flex: 1, justifyContent: 'center' }}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
-                          <Text style={styles.inProgressTagTitle}>There are no In Progress Activities</Text>
-                      </View>
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
+                    <Text style={styles.inProgressTagTitle}>There are no In Progress Activities</Text>
                   </View>
+                </View>
               </View>
             )}
+          </ScrollView>
 
 
           {/* Quick Picks Section */}
@@ -183,32 +235,32 @@ const HomeScreen = () => {
           <Separator/>
 
           <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} style={styles.horizontalScrollView}>
-                <TouchableOpacity onPress={() => handleQuickPick()} style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#cdbba4'}]}>
+                <TouchableOpacity onPress={() => handleQuickPick("Explorer")} style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#cdbba4'}]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
                       <Text style={styles.recommendedTagTitle}>Explorer 🏔️</Text>
                     </View>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#f3c4cf'}]}>
+                <TouchableOpacity onPress={() => handleQuickPick("Romantic")} style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#f3c4cf'}]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
                       <Text style={styles.recommendedTagTitle}>Romantic 💞</Text>
                     </View>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#FFD280'}]}>
+                <TouchableOpacity onPress={() => handleQuickPick("Creator")} style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#FFD280'}]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
                       <Text style={styles.recommendedTagTitle}>Creator 🎨</Text>
                     </View>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#AFE1AF'}]}>
+                <TouchableOpacity onPress={() => handleQuickPick("Nightowl")} style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#AFE1AF'}]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
                       <Text style={styles.recommendedTagTitle}>Nightowl 🦉</Text>
                     </View>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#AFC0F2'}]}>
+                <TouchableOpacity onPress={() => handleQuickPick("Gamemaster")} style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#AFC0F2'}]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
                       <Text style={styles.recommendedTagTitle}>Gamemaster 👾</Text>
                     </View>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#fc9e93'}]}>
+                <TouchableOpacity onPress={() => handleQuickPick("Zenmaster")} style={[styles.quickPickContainer, styles.dropShadow, {backgroundColor: '#fc9e93'}]}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
                       <Text style={styles.recommendedTagTitle}>Zenmaster 🧘🏻‍♀️</Text>
                     </View>
@@ -222,13 +274,12 @@ const HomeScreen = () => {
               <Image source={expand_arrow} style={styles.arrowIcon}/>
             </TouchableOpacity>
           </View>
-          <Separator/>
+          <View style={styles.separator}/>
 
-          
+          <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
             {completedActivities.length > 0 ? (
               completedActivities.slice(0, 3).map((activity, index) => (
-              <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} style={styles.horizontalScrollView} key={activity.savedActivityID}>
-                <View style={[styles.container, styles.completedActivityContainer, styles.dropShadow]}>
+                <View key={activity.savedActivityID} style={[styles.completedActivityContainer, styles.dropShadow]}>
                   <View style={{ flex: 1, justifyContent: 'center' }}>
                     <View>
                       <Text style={styles.completedTagTitle}>{activity.title}</Text>
@@ -240,28 +291,26 @@ const HomeScreen = () => {
                     </View>
 
                     <View style={styles.tagContainer}>
-                      {renderCompletedTags(activity.typeOfActivity)}
-                      {renderCompletedTags(activity.location)}
+                      {renderTags(activity.typeOfActivity, styles.inProgressTagStyle)}
+                      {renderTags(activity.location, styles.inProgressTagStyle)}
+                      {renderTags(activity.mood, styles.inProgressTagStyle)}
                     </View>
-                    {/* <View style={styles.tagContainer}>
-                      {renderCompletedTags(activity.mood)}
-                    </View> */}
                   </View>
                   <TouchableOpacity onPress={() => navigateToActivityScreen(activity.sessionID, activity.savedActivityID)}>
                     <Image source={completed_expand_activity} style={styles.expandIcon} />
                   </TouchableOpacity>
                 </View>
-              </ScrollView>
               ))
             ) : (
               <View style={[styles.noCompletedActivityContainer, styles.dropShadow]}>
-                  <View style={{ flex: 1, justifyContent: 'center' }}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
-                          <Text style={styles.completedTagTitle}>There are no Completed Activities</Text>
-                      </View>
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
+                    <Text style={styles.completedTagTitle}>There are no Completed Activities</Text>
                   </View>
+                </View>
               </View>
             )}
+          </ScrollView>
           
         </ScrollView>
       )}
