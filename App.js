@@ -26,7 +26,6 @@ import unfocusSettingsIcon from './assets/taskbar_icons/unfocus_account_icon.png
 
 import backButtonImage from './assets/other_icons/back_button.png';
 
-
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 

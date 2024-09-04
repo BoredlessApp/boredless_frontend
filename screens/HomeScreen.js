@@ -151,9 +151,7 @@ const HomeScreen = () => {
           <Text style={{ marginTop: 20 }}>Loading activity...</Text>
         </View>
       ) : (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView showsVerticalScrollIndicator={false}>
           <TouchableOpacity onPress={() => navigation.navigate('Generate')}>
             <View style={[styles.startActivityContainer, styles.dropShadow]}>
               <View>
@@ -175,9 +173,9 @@ const HomeScreen = () => {
           </View>
           <View style={styles.separator} />
 
-          <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
-            {inProgressActivities.length > 0 ? (
-              inProgressActivities.slice(0, 3).map((activity, index) => (
+          {inProgressActivities.length > 0 ? (
+            <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
+              {inProgressActivities.slice(0, 3).map((activity, index) => (
                 <View key={activity.savedActivityID} style={[styles.inProgressActivityContainer, styles.dropShadow]}>
                   <View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -211,18 +209,18 @@ const HomeScreen = () => {
                   <TouchableOpacity onPress={() => navigateToActivityScreen(activity.sessionID, activity.savedActivityID)}>
                     <Image source={in_progress_expand_activity} style={styles.expandIcon} />
                   </TouchableOpacity>
-                </View>
-              ))
-            ) : (
-              <View style={[styles.noInProgressActivityContainer, styles.dropShadow]}>
-                <View style={{ flex: 1, justifyContent: 'center' }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
-                    <Text style={styles.inProgressTagTitle}>There are no In Progress Activities</Text>
                   </View>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={[styles.noInProgressActivityContainer, styles.dropShadow]}>
+              <View style={{ flex: 1, justifyContent: 'center' }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
+                  <Text style={styles.inProgressTagTitle}>There are no In Progress Activities</Text>
                 </View>
               </View>
-            )}
-          </ScrollView>
+            </View>
+          )}
 
 
           {/* Quick Picks Section */}
@@ -276,9 +274,9 @@ const HomeScreen = () => {
           </View>
           <View style={styles.separator}/>
 
-          <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
-            {completedActivities.length > 0 ? (
-              completedActivities.slice(0, 3).map((activity, index) => (
+          {completedActivities.length > 0 ? (
+            <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
+              {completedActivities.slice(0, 3).map((activity, index) => (
                 <View key={activity.savedActivityID} style={[styles.completedActivityContainer, styles.dropShadow]}>
                   <View style={{ flex: 1, justifyContent: 'center' }}>
                     <View>
@@ -299,19 +297,18 @@ const HomeScreen = () => {
                   <TouchableOpacity onPress={() => navigateToActivityScreen(activity.sessionID, activity.savedActivityID)}>
                     <Image source={completed_expand_activity} style={styles.expandIcon} />
                   </TouchableOpacity>
-                </View>
-              ))
-            ) : (
-              <View style={[styles.noCompletedActivityContainer, styles.dropShadow]}>
-                <View style={{ flex: 1, justifyContent: 'center' }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
-                    <Text style={styles.completedTagTitle}>There are no Completed Activities</Text>
                   </View>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={[styles.noCompletedActivityContainer, styles.dropShadow]}>
+              <View style={{ flex: 1, justifyContent: 'center' }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
+                  <Text style={styles.completedTagTitle}>There are no Completed Activities</Text>
                 </View>
               </View>
-            )}
-          </ScrollView>
-          
+            </View>
+          )}
         </ScrollView>
       )}
     </SafeAreaView>

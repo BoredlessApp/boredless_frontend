@@ -36,7 +36,7 @@ const ExpandSavedScreen = ({ route, navigation }) => {
     };
 
     const renderTags = (tagsString, style) => {
-        if (tagsString === "any") return null;
+        if (tagsString === "any" || tagsString === "") return null;
 
         const tags = tagsString.split(',').slice(0, 1);
         return tags.map((tag, index) => (

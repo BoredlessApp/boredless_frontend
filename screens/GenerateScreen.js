@@ -332,10 +332,13 @@ const GenerateScreen = () => {
       ];
   const navigation = useNavigation();
 
-  const dataHashMap = combinedData.reduce((acc, item) => {
-    acc[item.id] = item;
-    return acc;
-  }, {});
+  const [dataHashMap, setDataHashMap] = useState(() => 
+    combinedData.reduce((acc, item) => {
+      acc[item.id] = item;
+      return acc;
+    }, {})
+  );
+  
   const [loading, setLoading] = useState(false);
   const [keywords, setKeywords] = useState([]);
   const [keywordValue, setKeywordValue] = useState("");
@@ -371,21 +374,49 @@ const GenerateScreen = () => {
         handleSingleSelection(PARTICIPANTS);
       } else if (updatedItem.dataType === "location") {
         handleSingleSelection(LOCATION);
-            }
+        }
 
       return updatedState;
     });
+  };
+
+  const addKeyword = (keyword) => {
+    const trimmedKeyword = keyword.trim();
+    if (trimmedKeyword) {
+      // Check for special characters and numbers
+      if (/^[a-zA-Z\s]+$/.test(trimmedKeyword)) {
+        // Capitalize the first letter
+        const capitalizedKeyword = trimmedKeyword.charAt(0).toUpperCase() + trimmedKeyword.slice(1).toLowerCase();
+        
+        // Check for duplicates
+        if (keywords.map(k => k.toLowerCase()).includes(capitalizedKeyword.toLowerCase())) {
+          setErrorMessage("This keyword has already been added.");
+          return false;
+        } else {
+          setKeywords((prevKeywords) => [capitalizedKeyword, ...prevKeywords]);
+          setErrorMessage(""); // Clear any existing error message
+          return true;
+        }
+      } else {
+        setErrorMessage("Keywords should only contain letters and spaces.");
+        return false;
+      }
+    } else {
+      setErrorMessage("Please enter a valid keyword.");
+      return false;
+    }
   };
 
   const handleKeywordPress = (text) => {
     if (text.endsWith(' ')) {
       // Space was pressed
       if (keywordValue.trim()) {
-        // Add the current keyword if it's not empty
-        setKeywords((prevKeywords) => [keywordValue.trim(), ...prevKeywords]);
+        // Try to add the current keyword
+        if (addKeyword(keywordValue)) {
+          // If successful, clear the input field
+          setKeywordValue('');
+        }
       }
-      // Clear the input field
-      setKeywordValue('');
     } else {
       // Update the input value normally
       setKeywordValue(text);
@@ -393,23 +424,8 @@ const GenerateScreen = () => {
   };
 
   const handleCustomKeyword = () => {
-    const trimmedKeyword = keywordValue.trim().toLowerCase();
-    if (trimmedKeyword) {
-      // Check for special characters and numbers
-      if (/^[a-zA-Z\s]+$/.test(trimmedKeyword)) {
-        // Check for duplicates
-        if (keywords.map(k => k.toLowerCase()).includes(trimmedKeyword)) {
-          setErrorMessage("This keyword has already been added.");
-        } else {
-          setKeywords((prevKeywords) => [trimmedKeyword, ...prevKeywords]);
-          setKeywordValue(''); // Clear the input field after adding the keyword
-          setErrorMessage(""); // Clear any existing error message
-        }
-      } else {
-        setErrorMessage("Keywords should only contain letters and spaces.");
-      }
-    } else {
-      setErrorMessage("Please enter a valid keyword.");
+    if (addKeyword(keywordValue)) {
+      setKeywordValue(''); // Clear the input field after adding the keyword
     }
   };
 
@@ -439,10 +455,23 @@ const GenerateScreen = () => {
     };
   };
 
+  const clearSelections = () => {
+    setSelectedData((prevState) => {
+      const clearedState = {};
+      for (const key in prevState) {
+        clearedState[key] = { ...prevState[key], selected: false };
+      }
+      return clearedState;
+    });
+    setKeywords([]);
+    setKeywordValue("");
+  };
+
   const navigateToActivityScreen = () => {
     const promptObject = generatePrompt();
     console.log("Navigating with prompt:", promptObject);
     navigation.navigate('Activity', { prompt: promptObject });
+    clearSelections();
   };
 
   const renderItem = ({ item }) => {
