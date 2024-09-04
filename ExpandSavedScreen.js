@@ -38,13 +38,13 @@ const ExpandSavedScreen = ({ route, navigation }) => {
     const renderTags = (tagsString, style) => {
         if (tagsString === "any") return null;
 
-        const tags = tagsString.split(',').slice(0, 2);
+        const tags = tagsString.split(',').slice(0, 1);
         return tags.map((tag, index) => (
           <View key={index}>
             <Text style={style}>{tag.trim()}</Text>
           </View>
         ));
-      };   
+      }; 
 
     useFocusEffect(
         React.useCallback(() => {
@@ -107,6 +107,7 @@ const ExpandSavedScreen = ({ route, navigation }) => {
                                             {renderTags(activity.typeOfActivity, styles.inProgressTagStyle)}
                                             {renderTags(activity.location, styles.inProgressTagStyle)}
                                             {renderTags(activity.mood, styles.inProgressTagStyle)}
+                                            {renderTags(activity.keywords, styles.inProgressTagStyle)}
                                         </View>
                                     </View>
                                     <TouchableOpacity onPress={() => navigateToActivityScreen(activity.sessionID, activity.savedActivityID)}>
@@ -154,8 +155,9 @@ const ExpandSavedScreen = ({ route, navigation }) => {
 
                                         <View style={styles.tagContainer}>
                                             {renderTags(activity.typeOfActivity, styles.inProgressTagStyle)}
-                                            <Text style={styles.inProgressTagStyle}>{activity.location}</Text>
+                                            {renderTags(activity.location, styles.inProgressTagStyle)}
                                             {renderTags(activity.mood, styles.inProgressTagStyle)}
+                                            {renderTags(activity.keywords, styles.inProgressTagStyle)}
                                         </View>
                                     </View>
                                     <TouchableOpacity onPress={() => navigateToActivityScreen(activity.sessionID, activity.savedActivityID)}>
