@@ -10,17 +10,17 @@ import ActivityScreen from './ActivityScreen';
 import SavedScreen from './SavedScreen';
 import ExpandActivityScreen from './ExpandActivityScreen';
 
-import focusHomeIcon from './assets/focus_home_icon.png';
-import unfocusHomeIcon from './assets/unfocus_home_icon.png';
+import focusHomeIcon from './assets/taskbar_icons/focus_home_icon.png';
+import unfocusHomeIcon from './assets/taskbar_icons/unfocus_home_icon.png';
 
-import focusSavedIcon from './assets/focus_saved_icon.png';
-import unfocusSavedIcon from './assets/unfocus_saved_icon.png';
+import focusSavedIcon from './assets/taskbar_icons/focus_saved_icon.png';
+import unfocusSavedIcon from './assets/taskbar_icons/unfocus_saved_icon.png';
 
-import focusGenerateIcon from './assets/focus_generate_icon.png';
-import unfocusGenerateIcon from './assets/unfocus_generate_icon.png';
+import focusGenerateIcon from './assets/taskbar_icons/focus_generate_icon.png';
+import unfocusGenerateIcon from './assets/taskbar_icons/unfocus_generate_icon.png';
 
-import focusSettingsIcon from './assets/focus_account_icon.png';
-import unfocusSettingsIcon from './assets/unfocus_account_icon.png';
+import focusSettingsIcon from './assets/taskbar_icons/focus_account_icon.png';
+import unfocusSettingsIcon from './assets/taskbar_icons/unfocus_account_icon.png';
 
 import backButtonImage from './assets/back-button.png';
 

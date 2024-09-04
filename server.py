@@ -202,7 +202,7 @@ async def generate_activity(sessionID, location, mood, participants, timeOfDay, 
         next_activity_id = max_activity_id + 1
 
         response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4o",
             messages=[{"role": "system", "content": system_prompt}],
             temperature=1,
             max_tokens=1024,
@@ -383,6 +383,17 @@ async def update_activity(sessionID: str, savedActivityID: int, data: UpdateActi
             raise HTTPException(status_code=404, detail="Activity not found")
 
     return {"message": "Activity updated successfully"}
+
+@app.delete("/delete_activity/{savedActivityID}")
+async def delete_activity(savedActivityID: int):
+    async with aiosqlite.connect(DATABASE_NAME) as db:
+        await db.execute("DELETE FROM saved_activities WHERE savedActivityID = ?", (savedActivityID,))
+        await db.commit()
+        
+        if db.changes == 0:
+            raise HTTPException(status_code=404, detail="Activity not found")
+
+    return {"message": "Activity deleted successfully"}
 
 
 @app.get("/get_saved_activities")

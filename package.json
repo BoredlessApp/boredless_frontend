@@ -41,6 +41,7 @@
     "react-native": "0.73.6",
     "react-native-check-box": "^2.1.7",
     "react-native-elements": "^3.4.3",
+    "react-native-gesture-handler": "^2.18.1",
     "react-native-linear-gradient": "^2.8.3",
     "react-native-neumorphic": "^0.0.0-development",
     "react-native-progress": "^5.0.1",

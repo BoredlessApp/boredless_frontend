@@ -21,49 +21,49 @@ const windowHeight = Dimensions.get('window').height;
 const TYPEOFACTIVITY = [
   {
     id: "100",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/art.png"),
     title: "Art",
     dataType: "activity",
     selected: false,
   },
   {
     id: "101",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/DIY.png"),
     title: "DIY",
     dataType: "activity",
     selected: false,
   },
   {
     id: "102",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/exploring.png"),
     title: "Exploring",
     dataType: "activity",
     selected: false,
   },
   {
     id: "103",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/game.png"),
     title: "Game",
     dataType: "activity",
     selected: false,
   },
   {
     id: "104",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/date.png"),
     title: "Date",
     dataType: "activity",
     selected: false,
   },
   {
     id: "105",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/sports.png"),
     title: "Sports",
     dataType: "activity",
     selected: false,
   },
   {
     id: "106",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/drinking.png"),
     title: "Drinking",
     dataType: "activity",
     selected: false,
@@ -73,28 +73,28 @@ const TYPEOFACTIVITY = [
 const TIMEOFDAY = [
   {
     id: "200",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/morning.png"),
     title: "Morning",
     dataType: "time-of-day",
     selected: false,
   },
   {
     id: "201",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/afternoon.png"),
     title: "Afternoon",
     dataType: "time-of-day",
     selected: false,
   },
   {
     id: "202",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/evening.png"),
     title: "Evening",
     dataType: "time-of-day",
     selected: false,
   },
   {
     id: "203",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/night.png"),
     title: "Night",
     dataType: "time-of-day",
     selected: false,
@@ -104,42 +104,42 @@ const TIMEOFDAY = [
 const PARTICIPANTS = [
   {
     id: "300",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/nature_icon.png"),
     title: "1",
     dataType: "participants",
     selected: false,
   },
   {
     id: "301",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/nature_icon.png"),
     title: "2",
     dataType: "participants",
     selected: false,
   },
   {
     id: "302",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/nature_icon.png"),
     title: "3",
     dataType: "participants",
     selected: false,
   },
   {
     id: "303",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/nature_icon.png"),
     title: "4",
     dataType: "participants",
     selected: false,
   },
   {
     id: "304",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/nature_icon.png"),
     title: "5",
     dataType: "participants",
     selected: false,
   },
   {
     id: "305",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/nature_icon.png"),
     title: "6+",
     dataType: "participants",
     selected: false,
@@ -149,35 +149,35 @@ const PARTICIPANTS = [
 const LOCATION = [
   {
     id: "400",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/home.png"),
     title: "Home",
     dataType: "location",
     selected: false,
   },
   {
     id: "401",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/city.png"),
     title: "City",
     dataType: "location",
     selected: false,
   },
   {
     id: "402",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/indoors.png"),
     title: "Indoors",
     dataType: "location",
     selected: false,
   },
   {
     id: "403",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/outdoors.png"),
     title: "Outdoors",
     dataType: "location",
     selected: false,
   },
   {
     id: "404",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/virtual.png"),
     title: "Virtual",
     dataType: "location",
     selected: false,
@@ -187,49 +187,49 @@ const LOCATION = [
 const MOOD = [
   {
     id: "500",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/energetic.png"),
     title: "Energetic",
     dataType: "mood",
     selected: false,
   },
   {
     id: "501",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/relaxed.png"),
     title: "Relaxed",
     dataType: "mood",
     selected: false,
   },
   {
     id: "502",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/playful.png"),
     title: "Playful",
     dataType: "mood",
     selected: false,
   },
   {
     id: "503",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/inspired.png"),
     title: "Inspired",
     dataType: "mood",
     selected: false,
   },
   {
     id: "504",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/mysterious.png"),
     title: "Mysterious",
     dataType: "mood",
     selected: false,
   },
   {
     id: "505",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/romantic.png"),
     title: "Romantic",
     dataType: "mood",
     selected: false,
   },
   {
     id: "506",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/nostalgic.png"),
     title: "Nostalgic",
     dataType: "mood",
     selected: false
@@ -238,21 +238,21 @@ const MOOD = [
 const BUDGET = [
   {
     id: "600",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/nature_icon.png"),
     title: "$",
     dataType: "budget",
     selected: false,
   },
   {
     id: "601",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/nature_icon.png"),
     title: "$$",
     dataType: "budget",
     selected: false,
   },
   {
     id: "602",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/nature_icon.png"),
     title: "$$$",
     dataType: "budget",
     selected: false,
@@ -261,28 +261,28 @@ const BUDGET = [
 const RELATIONTYPE = [
   {
     id: "700",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/nature_icon.png"),
     title: "Friends",
     dataType: "relation-type",
     selected: false,
   },
   {
     id: "701",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/nature_icon.png"),
     title: "Family",
     dataType: "relation-type",
     selected: false,
   },
   {
     id: "702",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/nature_icon.png"),
     title: "Colleagues",
     dataType: "relation-type",
     selected: false,
   },
   {
     id: "703",
-    img: require("./assets/nature_icon.png"),
+    img: require("./assets/generate_page_icons/nature_icon.png"),
     title: "Romantic",
     dataType: "relation-type",
     selected: false,
@@ -340,6 +340,7 @@ const GenerateScreen = () => {
   const [keywords, setKeywords] = useState([]);
   const [keywordValue, setKeywordValue] = useState("");
   const [selectedData, setSelectedData] = useState(dataHashMap);
+  const [errorMessage, setErrorMessage] = useState("");
   const selectedItems = Object.values(selectedData).filter(
     (item) => item.selected
   );
@@ -376,15 +377,42 @@ const GenerateScreen = () => {
     });
   };
 
-  const handleCustomKeyword = () => {
-    if (keywordValue && keywordValue.trim()) {
-      setKeywords((prevKeywords) => [keywordValue.trim(), ...prevKeywords]);
-      setKeywordValue("");
+  const handleKeywordPress = (text) => {
+    if (text.endsWith(' ')) {
+      // Space was pressed
+      if (keywordValue.trim()) {
+        // Add the current keyword if it's not empty
+        setKeywords((prevKeywords) => [keywordValue.trim(), ...prevKeywords]);
+      }
+      // Clear the input field
+      setKeywordValue('');
     } else {
-      // Optionally add feedback to user about invalid input
-      console.log("Invalid keyword input");
+      // Update the input value normally
+      setKeywordValue(text);
     }
   };
+
+  const handleCustomKeyword = () => {
+    const trimmedKeyword = keywordValue.trim().toLowerCase();
+    if (trimmedKeyword) {
+      // Check for special characters and numbers
+      if (/^[a-zA-Z\s]+$/.test(trimmedKeyword)) {
+        // Check for duplicates
+        if (keywords.map(k => k.toLowerCase()).includes(trimmedKeyword)) {
+          setErrorMessage("This keyword has already been added.");
+        } else {
+          setKeywords((prevKeywords) => [trimmedKeyword, ...prevKeywords]);
+          setKeywordValue(''); // Clear the input field after adding the keyword
+          setErrorMessage(""); // Clear any existing error message
+        }
+      } else {
+        setErrorMessage("Keywords should only contain letters and spaces.");
+      }
+    } else {
+      setErrorMessage("Please enter a valid keyword.");
+    }
+  };
+
 
   const generatePrompt = () => {
     const activities = selectedItems
@@ -435,12 +463,22 @@ const GenerateScreen = () => {
   };
   console.log("Selected items:", selectedItems, "Keywords:", keywords);
 
+  const handleRemoveKeyword = (keywordToRemove) => {
+    setKeywords((prevKeywords) => prevKeywords.filter(keyword => keyword !== keywordToRemove));
+  };
+
   const renderKeywordsTags = () => {
     const tags = keywords.slice(0, 3);
     return tags.map((tag, index) => (
-      <View key={index} style={styles.tagStyle}>
-        <Text style={styles.keywordTagStyle}>{tag.trim()}</Text>
-      </View>
+      <TouchableOpacity 
+        key={index} 
+        style={styles.keywordTagStyle}
+        onPress={() => handleRemoveKeyword(tag)}
+      >
+        <Text style={styles.keywordTagText}>
+          {tag.trim()} <Text style={{fontWeight: 'bold'}}>×</Text>
+        </Text>
+      </TouchableOpacity>
     ));
   };
 
@@ -506,8 +544,10 @@ const GenerateScreen = () => {
               <TextInput
                 style={styles.customInputField}
                 placeholder="Write keywords for your activity"
-                onChangeText={setKeywordValue}
+                onChangeText={handleKeywordPress}
                 value={keywordValue}
+                onSubmitEditing={handleCustomKeyword}
+                blurOnSubmit={false}
               />
               <TouchableOpacity 
                 onPress={handleCustomKeyword}
@@ -518,8 +558,9 @@ const GenerateScreen = () => {
                 </Text>
               </TouchableOpacity>
             </View>
+            {errorMessage ? <Text style={styles.errorMessage}>{errorMessage}</Text> : null}
             <View style={styles.tagContainer}>
-              {renderKeywordsTags(keywords)}
+              {renderKeywordsTags()}
             </View>
           </View>
         </View>
@@ -652,6 +693,18 @@ const styles = StyleSheet.create({
     height: 46,
     minWidth: '18%'
   },
+  keywordTagContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  removeKeywordButton: {
+    marginRight: 5,
+  },
+  removeKeywordText: {
+    fontSize: 14,
+    color: '#1A1A1A',
+    fontWeight: 'bold',
+  },
   keywordTagStyle: {
     fontSize: 10,
     fontFamily: 'Montserrat-Regular',
@@ -668,6 +721,13 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: 'Montserrat-Regular',
     color: '#1A1A1A'
+  },
+  errorMessage: {
+    color: 'red',
+    fontSize: 10,
+    marginTop: 2,
+    marginLeft: 10,
+    fontFamily: 'Montserrat-Regular',
   },
   image: {
     width: buttonSize * 0.6,

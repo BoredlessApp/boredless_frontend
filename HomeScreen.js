@@ -47,53 +47,53 @@ const HomeScreen = () => {
     switch (generateType) {
       case "Explorer":
         console.log("Explorer");
-        typeOfActivity = "Exploring,Hiking,Adventure";
-        mood = "Energetic,Curious";
-        location = "Outdoors,City";
-        keywords = ["discovery", "nature", "landmarks"];
+        typeOfActivity = "Exploring, Hiking, Adventure";
+        mood = "Energetic, Curious";
+        location = "Outdoors, City";
+        keywords = ["Discovery", "Nature", "Landmarks"];
         break;
   
       case "Romantic":
         console.log("Romantic");
-        typeOfActivity = "Date,Relaxation";
-        mood = "Romantic,Intimate";
-        timeOfDay = "Evening,Night";
+        typeOfActivity = "Date, Relaxation";
+        mood = "Romantic, Intimate";
+        timeOfDay = "Evening, Night";
         participants = "2";
-        keywords = ["couple", "intimate", "memorable"];
+        keywords = ["Couple", "Intimate", "Memorable"];
         break;
   
       case "Creator":
         console.log("Creator");
-        typeOfActivity = "Art,DIY,Crafts";
-        mood = "Inspired,Creative";
+        typeOfActivity = "Art, DIY, Crafts";
+        mood = "Inspired, Creative";
         location = "Home,Indoors";
-        keywords = ["artistic", "hands-on", "expressive"];
+        keywords = ["Artistic", "Hands-on", "Expressive"];
         break;
   
       case "Nightowl":
         console.log("Nightowl");
-        typeOfActivity = "Entertainment,Socializing";
-        mood = "Energetic,Mysterious";
+        typeOfActivity = "Entertainment, Socializing";
+        mood = "Energetic, Mysterious";
         timeOfDay = "Night";
-        location = "City,Indoors";
-        keywords = ["nightlife", "adventure", "urban"];
+        location = "City, Indoors";
+        keywords = ["Nightlife", "Adventure", "Urban"];
         break;
   
       case "Gamemaster":
         console.log("Gamemaster");
-        typeOfActivity = "Game,Puzzle,Challenge";
-        mood = "Playful,Competitive";
+        typeOfActivity = "Game, Puzzle, Challenge";
+        mood = "Playful, Competitive";
         participants = "2,4,6+";
-        location = "Home,Indoors";
-        keywords = ["strategy", "fun", "interactive"];
+        location = "Home, Indoors";
+        keywords = ["Strategy", "Fun", "Interactive"];
         break;
   
       case "Zenmaster":
         console.log("Zenmaster");
-        typeOfActivity = "Relaxation,Meditation,Yoga";
-        mood = "Calm,Peaceful";
-        location = "Home,Outdoors";
-        keywords = ["mindfulness", "tranquility", "wellness"];
+        typeOfActivity = "Relaxation, Meditation, Yoga";
+        mood = "Calm, Peaceful";
+        location = "Home, Outdoors";
+        keywords = ["Mindfulness", "Tranquility", "Wellness"];
         break;
   
       default:
@@ -442,12 +442,12 @@ const styles = StyleSheet.create({
   },
   inProgressTagTitle: {
     fontFamily: 'Montserrat-SemiBold',
-    fontSize: 14,
+    fontSize: 13,
     color: '#1A1A1A'
   },
   completedTagTitle: {
     fontFamily: 'Montserrat-SemiBold',
-    fontSize: 14,
+    fontSize: 13,
     color: '#FBFBFB'
   },
   dateCompleted: {
