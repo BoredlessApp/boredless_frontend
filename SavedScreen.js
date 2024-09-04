@@ -50,7 +50,7 @@ const SavedScreen = () => {
             <Text style={style}>{tag.trim()}</Text>
           </View>
         ));
-      };  
+      };
 
     useFocusEffect(
         React.useCallback(() => {
