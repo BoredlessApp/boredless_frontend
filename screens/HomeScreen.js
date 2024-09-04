@@ -5,9 +5,9 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as Progress from 'react-native-progress';
 
 // Images
-const in_progress_expand_activity = require('./assets/in_progress_activity_expand.png');
-const completed_expand_activity = require('./assets/completed_activity_expand.png');
-const expand_arrow = require('./assets/expand_arrow.png');
+const in_progress_expand_activity = require('../assets/other_icons/in_progress_activity_expand.png');
+const completed_expand_activity = require('../assets/other_icons/completed_activity_expand.png');
+const expand_arrow = require('../assets/other_icons/expand_arrow.png');
 
 
 const HomeScreen = () => {

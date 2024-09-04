@@ -1,14 +1,16 @@
 import React from 'react';
+import { useFonts } from 'expo-font';
 import { Image, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
-import HomeScreen from './HomeScreen';
-import GenerateScreen from './GenerateScreen';
-import SettingsScreen from './SettingsScreen';
-import ActivityScreen from './ActivityScreen';
-import SavedScreen from './SavedScreen';
-import ExpandActivityScreen from './ExpandActivityScreen';
+import HomeScreen from './screens/HomeScreen';
+import GenerateScreen from './screens/GenerateScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import ActivityScreen from './screens/ActivityScreen';
+import SavedScreen from './screens/SavedScreen';
+import ExpandActivityScreen from './screens/ExpandActivityScreen';
+import ExpandSavedScreen from './screens/ExpandSavedScreen';
 
 import focusHomeIcon from './assets/taskbar_icons/focus_home_icon.png';
 import unfocusHomeIcon from './assets/taskbar_icons/unfocus_home_icon.png';
@@ -22,10 +24,8 @@ import unfocusGenerateIcon from './assets/taskbar_icons/unfocus_generate_icon.pn
 import focusSettingsIcon from './assets/taskbar_icons/focus_account_icon.png';
 import unfocusSettingsIcon from './assets/taskbar_icons/unfocus_account_icon.png';
 
-import backButtonImage from './assets/back-button.png';
+import backButtonImage from './assets/other_icons/back_button.png';
 
-import { useFonts } from 'expo-font';
-import ExpandSavedScreen from './ExpandSavedScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
