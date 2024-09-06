@@ -23,6 +23,12 @@ from datetime import datetime
 app = FastAPI()
 cache = Cache(Cache.MEMORY)
 
+openai_key=os.getenv('OPENAI_KEY')
+stability_key = os.getenv('STABILITY_KEY')
+
+openai_client = OpenAI(api_key=openai_key)
+url = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image"
+
 # Allow CORS for all origins
 app.add_middleware(
     CORSMiddleware,
@@ -139,12 +145,6 @@ class ImageRequest(BaseModel):
     activityTitle: str
     n: int = 1
 
-openai_client = OpenAI(api_key=os.getenv('OPENAI_KEY'))
-os.environ['STABILITY_HOST'] = 'grpc.stability.ai:443'
-os.environ['STABILITY_KEY'] = 'sk-qKCZwEAZD0DEkIChICCfAAPgqQmNLMdOc1wPnmWapkIUsu7U'
-url = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image"
-
-
 def generate_id(location, mood, participants, timeOfDay, typeOfActivity, keywords, generateType):
     """
     Generate a session ID based on the hash of the prompt components.
@@ -246,13 +246,11 @@ async def regenerate(data: RegenerateRequest):
 
 @app.post("/generate_image")
 async def generate_image(data: ImageRequest):
-    # print("Received data:", jsonable_encoder(data))
     max_attempts = 3
     attempt = 0
 
     while attempt < max_attempts:
         try:
-            # Increment attempt count
             attempt += 1
 
             # Set up our connection to the API.
@@ -282,17 +280,13 @@ async def generate_image(data: ImageRequest):
                         img_base64 = base64.b64encode(img_data.getvalue()).decode('utf-8')
                         return JSONResponse(content={"image": img_base64}, media_type="application/json")
 
-            # If we reach this point without returning, no image was generated
             if attempt == max_attempts:
-                # No image generated after max attempts, return default "no image" response
                 return JSONResponse(content={"message": "No image was generated after multiple attempts."}, status_code=500)
 
         except Exception as e:
             print(f"Attempt {attempt} failed: {e}")
-            # Optionally add a short delay before retrying
             await asyncio.sleep(1)
 
-    # If we've exhausted retries, return a default "no image" response
     return JSONResponse(content={"message": "Failed to generate an image after retries."}, status_code=500)
 
 @app.post("/save_activity")
@@ -394,7 +388,6 @@ async def delete_activity(savedActivityID: int):
             raise HTTPException(status_code=404, detail="Activity not found")
 
     return {"message": "Activity deleted successfully"}
-
 
 @app.get("/get_saved_activities")
 async def get_saved_activities():
